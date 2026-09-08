@@ -30,6 +30,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .legend-item .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 .legend-item .lbl{font-weight:500}
 .legend-item .st{color:#8b949e;font-size:9px}
+.mini-legend{display:flex;gap:10px;padding:4px 8px;background:#f8f9fa;border-top:1px solid #e1e4e8;font-size:10px}
+.ml-item{display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;transition:opacity .2s}
+.ml-item .ml-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.ml-item.active{opacity:1}
+.ml-item:not(.active){opacity:.35;text-decoration:line-through}
 .chart-wrap{position:relative;background:#fff;margin:6px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:visible;height:calc(100vh - 260px);min-height:300px}
 .main-layout{display:flex;gap:0;margin:6px 10px;height:calc(100vh - 260px);min-height:300px}
 .chart-area{flex:1;background:#fff;border-radius:8px 0 0 8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:visible;position:relative}
@@ -912,6 +917,19 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid){
 
 // ========== UI1 — 每市场独立chart ==========
 const mktCharts={};
+const mktSeries={}; // {cardKey:{main:series, soxl:series, pad:series}}
+const mktVisible={}; // {cardKey:{main:true, soxl:true}}
+function toggleMktLine(el){
+  const key=el.dataset.key, type=el.dataset.type;
+  const vis=mktVisible[key];if(!vis)return;
+  vis[type]=!vis[type];
+  const ser=mktSeries[key];if(!ser)return;
+  const s=type==='main'?ser.main:ser.soxl;
+  if(s&&s.applyOptions){
+    s.applyOptions({visible:vis[type]});
+    el.classList.toggle('active',vis[type]);
+  }
+}
 
 // Mini chart背离高亮: 对比market segment vs SOXL同期趋势
 function drawMiniDivergence(ch,card,mktPctData){
@@ -1134,11 +1152,12 @@ function buildUI1(){
           console.log('NO DATA for',card.n);
         }
 
-        // 如果有SOXL baseline且不是SOXL本身，画一条虚线基准
+        // SOXL baseline — declared outside if for legend access
+        let ss=null;
         if(card.key!=='soxl_baseline'&&allD.soxl_baseline){
           const soxlPct=normPct(allD.soxl_baseline);
           if(soxlPct&&soxlPct.length){
-            const ss=ch.addLineSeries({color:'#959da5',width:1,name:'SOXL',lineStyle:LightweightCharts.LineStyle.Dashed,
+            ss=ch.addLineSeries({color:'#959da5',width:1,name:'SOXL',lineStyle:LightweightCharts.LineStyle.Dashed,
               crosshairMarkerVisible:true,priceLineVisible:false,lastValueVisible:false,
               priceFormat:{type:'custom',formatter:v=>v.toFixed(2)+'%'}});
             ss.setData(soxlPct);
@@ -1168,6 +1187,14 @@ function buildUI1(){
           }
         }
         mktCharts[card.key]=ch;
+        // Store series refs for legend toggle
+        mktSeries[card.key]={main:s, soxl:ss||null};
+        mktVisible[card.key]={main:true, soxl:!!ss};
+        // Add clickable legend below chart
+        const legendDiv=document.createElement('div');
+        legendDiv.className='mini-legend';
+        legendDiv.innerHTML=`<span class="ml-item active" data-key="${card.key}" data-type="main" onclick="toggleMktLine(this)" style="color:${card.c}"><span class="ml-dot" style="background:${card.c}"></span>${card.n}</span>` + (ss?`<span class="ml-item active" data-key="${card.key}" data-type="soxl" onclick="toggleMktLine(this)" style="color:#959da5"><span class="ml-dot" style="background:#959da5;border:1px dashed #959da5"></span>SOXL</span>`:'');
+        chartDiv.parentElement.appendChild(legendDiv);
 
         // 画背离高亮: market vs SOXL方向对比
         if(card.key!=='soxl_baseline'&&allD.soxl_baseline&&MKT[card.key]){
