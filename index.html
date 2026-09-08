@@ -30,6 +30,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .legend-item .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 .legend-item .lbl{font-weight:500}
 .legend-item .st{color:#8b949e;font-size:9px}
+.legend-item.clickable{cursor:pointer;transition:opacity .2s}
+.legend-item.clickable.active{opacity:1}
+.legend-item.clickable:not(.active){opacity:.35}
+.legend-item.clickable:not(.active) .dot{opacity:.3}
+.legend-item.clickable:not(.active) .lbl{text-decoration:line-through}
 .mini-legend{display:flex;gap:10px;padding:4px 8px;background:#f8f9fa;border-top:1px solid #e1e4e8;font-size:10px}
 .ml-item{display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;transition:opacity .2s}
 .ml-item .ml-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
@@ -1379,12 +1384,25 @@ function updateLegendUI2(){
   document.getElementById('tab2Badge').textContent=dc>0?`⚠️${dc}`:'OK';
 }
 function updateLegendUI3(){
-  const el=document.getElementById('legend');let h=`<div class="legend-item"><span class="dot" style="background:#959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
-  for(const[k,cfg]of Object.entries(MKT)){if(allD[k]&&allD[k].t)h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;}
+  const el=document.getElementById('legend');
+  let h=`<div class="legend-item clickable active" data-key="soxl" onclick="toggleUI3Line(this)"><span class="dot" style="background:#959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
+  for(const[k,cfg]of Object.entries(MKT)){
+    if(allD[k]&&(allD[k].t||Array.isArray(allD[k])))
+      h+=`<div class="legend-item clickable active" data-key="${k}" onclick="toggleUI3Line(this)"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
+  }
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'}})){
-    if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c};opacity:.5"></span><span class="lbl" style="opacity:.6">${cfg.n}</span></div>`;
+    if(allD[k])
+      h+=`<div class="legend-item clickable active" data-key="${k}" onclick="toggleUI3Line(this)"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
   }
   el.innerHTML=h;document.getElementById('tab3Badge').textContent='综合';
+}
+function toggleUI3Line(el){
+  const key=el.dataset.key;
+  const ser=key==='soxl'?series.ui3.soxl:series.ui3[key];
+  if(!ser)return;
+  const isVis=el.classList.contains('active');
+  ser.applyOptions({visible:!isVis});
+  el.classList.toggle('active');
 }
 
 // ========== Tab Switch ==========
