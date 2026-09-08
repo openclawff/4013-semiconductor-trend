@@ -235,12 +235,35 @@ function fetchWithTimeout(url, timeoutMs=5000){
   const timer=setTimeout(()=>controller.abort(), timeoutMs);
   return fetch(url, {signal:controller.signal}).finally(()=>clearTimeout(timer));
 }
+// 合并静态段数据+实时K线: 去重时间戳, 保证升序
+function mergeKlines(staticData, rtData){
+  if(!staticData||!staticData.t)return staticData;
+  if(!rtData||!rtData.length)return staticData;
+  const merged=new Map();
+  for(let i=0;i<staticData.t.length;i++){
+    if(staticData.c[i]>0)merged.set(staticData.t[i],{t:staticData.t[i],o:staticData.o[i],h:staticData.h[i],l:staticData.l[i],c:staticData.c[i],v:staticData.v[i]});
+  }
+  for(const bar of rtData){
+    if(bar.close>0)merged.set(bar.time,{t:bar.time,o:bar.open,h:bar.high,l:bar.low,c:bar.close,v:bar.volume});
+  }
+  const sorted=[...merged.values()].sort((a,b)=>a.t-b.t);
+  return{t:sorted.map(b=>b.t),o:sorted.map(b=>b.o),h:sorted.map(b=>b.h),l:sorted.map(b=>b.l),c:sorted.map(b=>b.c),v:sorted.map(b=>b.v)};
+}
+
 async function loadAll(){
   const files=['segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
   for(const f of files){try{const r=await fetch(D+'/'+f);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
   // SOXL: fetch from 5050 via server proxy (real-time, not static file)
   try{const r=await fetchWithTimeout('/api/soxl',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.soxl_baseline=d;console.log('SOXL 5050 OK:',d.length,'bars, last:',new Date(d[d.length-1].time*1000).toISOString());}}}catch(e){console.warn('SOXL 5050 failed:',e.message);}
-  for(const f of['CFDGOLD','USDX_FX','BTC_SPOT','CL']){try{const r=await fetch(D+'/futures_'+f+'.json');if(r.ok)allD['f_'+f]=await r.json();}catch(e){}}
+  // 盘外数据: 从4002实时拉取(非静态文件)
+  const offSymbols={CFDGOLD:'黄金',USDX_FX:'DXY',BTC_SPOT:'BTC',CL:'原油'};
+  const offPromises=Object.entries(offSymbols).map(async([sym,name])=>{
+    try{
+      const r=await fetchWithTimeout(API4002+'/history?symbol='+sym+'&resolution=60&from='+(Math.floor(Date.now()/1000)-86400*7)+'&to='+Math.floor(Date.now()/1000), 10000);
+      if(r.ok){const d=await r.json();if(d.s==='ok'&&d.t&&d.t.length){allD['f_'+sym]=d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));console.log('4002 OK:',name,allD['f_'+sym].length,'bars');}}
+    }catch(e){console.warn('4002 FAIL:',name,e.message);}
+  });
+  await Promise.allSettled(offPromises);
   // US SPY: from 5050 via server proxy (real-time)
   try{const r=await fetchWithTimeout('/api/us_spy',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.US=d;console.log('SPY 5050 OK:',d.length,'bars');}}}catch(e){console.warn('SPY 5050 failed:',e.message);}
   try{const r=await fetchWithTimeout('/api/bond-hedge',15000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){console.log('bond-hedge fetch failed:',e.message);}
@@ -252,6 +275,21 @@ async function loadAll(){
     }catch(e){console.warn('RT FAIL:',cfg.n,e.message);}
   });
   await Promise.allSettled(rtPromises);
+  // 合并CN/HK/JP/KR静态段数据+实时K线(去重, 保留段信息)
+  for(const[k,cfg]of Object.entries(MKT)){
+    const sd=allD[k]; // MKT key already has segments_ prefix
+    const rt=allD['rt_'+k];
+    if(sd&&sd.t&&rt&&rt.length){
+      const merged=mergeKlines(sd,rt);
+      merged.segments=sd.segments; // 保留段元数据
+      allD[k]=merged;
+      console.log('Merged:',cfg.n,sd.t.length,'static +',rt.length,'rt →',merged.t.length,'total');
+    }else if(!sd&&rt&&rt.length){
+      // US/EU: no static file, use RT directly
+      allD[k]=rt;
+      console.log('RT only:',cfg.n,rt.length,'bars');
+    }
+  }
   // 4002 分析数据（并行，带超时，不阻塞UI）
   const analysisPromises=[
     fetchWithTimeout(API4002+'/api/monitor/sectors?market=CN',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.sectors_cn=d;}).catch(()=>{}),
