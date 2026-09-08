@@ -1136,22 +1136,27 @@ function buildUI1(){
           setTimeout(()=>drawMiniDivergence(ch,card,pctData),500);
         }
 
-        // Popup跟随cursor — 用subscribeCrosshairMove + sourceEvent定位
+        // Popup跟随cursor — 显示该chart所有线条的值
         ch.subscribeCrosshairMove(param=>{
           const popup=document.getElementById('popup');
           if(!param||!param.time){popup.style.display='none';return;}
-          // 从pctData找最近的值
-          if(!pctData||!pctData.length){popup.style.display='none';return;}
-          const closest=pctData.reduce((best,p)=>Math.abs(p.time-param.time)<Math.abs(best.time-param.time)?p:best,pctData[0]);
-          if(!closest){popup.style.display='none';return;}
-          const v=closest.value;
-          const cls=v>0?'up':v<0?'down':'rg';
-          const sign=v>0?'+':'';
           const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+          // 收集所有series的值
+          let rows='';
+          param.seriesData.forEach((data,series)=>{
+            const name=series.options().name||'';
+            if(!name||name==='')return; // skip padding series
+            const v=data.value;
+            if(v===undefined||v===null)return;
+            const cls=v>0?'up':v<0?'down':'rg';
+            const sign=v>0?'+':'';
+            rows+='<div class="r"><span class="l">'+name+'</span><span class="v '+cls+'">'+sign+v.toFixed(2)+'%</span></div>';
+          });
+          if(!rows){popup.style.display='none';return;}
           popup.innerHTML='<div class="t">'+card.n+'</div>'
             +'<div class="r"><span class="l">时间</span><span class="v">HKT '+ts+'</span></div>'
-            +'<div class="r"><span class="l">波幅</span><span class="v '+cls+'">'+sign+v.toFixed(2)+'%</span></div>';
-          // LW Charts v4: sourceEvent=原始MouseEvent, point=chart坐标
+            +rows;
+          // 定位
           const se=param.sourceEvent;
           const pp=param.point;
           let left,top;
