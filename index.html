@@ -1410,12 +1410,21 @@ function updateLegendUI1(){
   el.innerHTML=h;document.getElementById('tab1Badge').textContent=totalDiv;
 }
 function updateLegendUI2(){
-  const el=document.getElementById('legend');let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3</span></div>`;
+  const el=document.getElementById('legend');
+  let h=`<div class="legend-item clickable active" data-key="soxl" onclick="toggleUI2Line(this)"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3</span></div>`;
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
-    if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
+    if(allD[k])h+=`<div class="legend-item clickable active" data-key="${k}" onclick="toggleUI2Line(this)"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
   }
   el.innerHTML=h;const divs=computeDXYDivergence();const dc=divs.filter(d=>d.isDiv).length;
   document.getElementById('tab2Badge').textContent=dc>0?`⚠️${dc}`:'OK';
+}
+function toggleUI2Line(el){
+  const key=el.dataset.key;
+  const ser=key==='soxl'?series.ui2.soxl:series.ui2[key];
+  if(!ser)return;
+  const isVis=el.classList.contains('active');
+  ser.applyOptions({visible:!isVis});
+  el.classList.toggle('active');
 }
 function updateLegendUI3(){
   const el=document.getElementById('legend');
