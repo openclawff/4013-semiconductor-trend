@@ -90,7 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mkt-card-info{padding:6px 14px;font-size:10px;color:#586069;border-top:1px solid #f0f0f0;display:flex;gap:12px;flex-wrap:wrap}
 .mkt-card-info span{white-space:nowrap}
 .intraday-panel{width:100%;border:none;border-radius:0;padding:10px 14px}
-.offhours-panel{top:8px;left:12px;width:310px}
+.offhours-panel{width:100%;border:none;border-radius:0;padding:10px 14px}
 .bond-panel{bottom:0;left:0;right:0;border-top:1px solid #e1e4e8;border-left:none;border-right:none;border-bottom:none;border-radius:0;max-height:90px}
 /* 相关性背离 collapsible */
 .corr-section{background:#fff;margin:6px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
@@ -141,11 +141,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="panel active" id="panel0"><div id="mktCards"></div></div>
   <div class="panel" id="panel1"><div id="chart2"></div></div>
   <div class="panel" id="panel2"><div id="chart3"></div></div>
-  <div class="ap offhours-panel" id="offhoursPanel" style="display:none"></div>
   <div class="ap bond-panel" id="bondPanel" style="display:none;position:relative;z-index:10"></div>
 </div>
 <div class="right-dock" id="rightDock">
   <div class="ap intraday-panel" id="intradayPanel"></div>
+  <div class="ap offhours-panel" id="offhoursPanel" style="display:none"></div>
 </div>
 </div>
 <div id="corrContainer" style="display:none"></div>
@@ -566,8 +566,10 @@ function renderIntradayPanel(){
 // ========== 盘外分析面板（DXY背离 + 期货敞口） ==========
 function renderOffhoursPanel(){
   const panel=document.getElementById('offhoursPanel');
+  const dock=document.getElementById('rightDock');
   const closedMkts=Object.keys(SESSIONS).filter(k=>!isMarketOpen(k).open);
   const divs=computeDXYDivergence();
+  dock.classList.add('open');
   panel.style.display='block';
   let h=`<div class="ap-t" onclick="toggleAP(this)">🌏 盘外分析 — 场外转折 & DXY背离</div><div class="ap-body">`;
 
@@ -1274,8 +1276,10 @@ function switchTab(idx){
   currentTab=idx;
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  // Right dock: only show on tab 0 (盘内转折)
-  document.getElementById('rightDock').classList.toggle('open',idx===0);
+  // Right dock: show on tab 0 (盘内) or tab 1 (盘外)
+  const showDock=idx===0||idx===1;
+  document.getElementById('rightDock').classList.toggle('open',showDock);
+  document.getElementById('intradayPanel').style.display=idx===0?'block':'none';
   document.getElementById('offhoursPanel').style.display=idx===1?'block':'none';
   document.getElementById('bondPanel').style.display=idx===1?'block':'none';
   // tab4: 隐藏主布局，避免空白占位
