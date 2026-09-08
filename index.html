@@ -154,6 +154,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 const D='data';let charts={};let series={};let allD={};let currentTab=0;let corrCharts={};let bondCharts={};
 const API4002='http://192.168.25.144:4002';
 const HKT_OFFSET=28800;
+// 全局鼠标位置追踪（用于crosshair tooltip定位）
+let _globalMouseX=0,_globalMouseY=0;
+document.addEventListener('mousemove',e=>{_globalMouseX=e.clientX;_globalMouseY=e.clientY;});
 const REFRESH_INTERVAL=60000;
 
 const MKT={
@@ -1133,11 +1136,35 @@ function buildUI1(){
           setTimeout(()=>drawMiniDivergence(ch,card,pctData),500);
         }
 
-        // Popup跟随cursor — 每个mini chart订阅crosshairMove
-        ch.subscribeCrosshairMove(p=>{
-          if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
-          showPopup(p,card,rt,pctData);
+        // Popup跟随cursor — 用subscribeCrosshairMove + sourceEvent定位
+        ch.subscribeCrosshairMove(param=>{
+          const popup=document.getElementById('popup');
+          if(!param||!param.time){popup.style.display='none';return;}
+          // 从pctData找最近的值
+          if(!pctData||!pctData.length){popup.style.display='none';return;}
+          const closest=pctData.reduce((best,p)=>Math.abs(p.time-param.time)<Math.abs(best.time-param.time)?p:best,pctData[0]);
+          if(!closest){popup.style.display='none';return;}
+          const v=closest.value;
+          const cls=v>0?'up':v<0?'down':'rg';
+          const sign=v>0?'+':'';
+          const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+          popup.innerHTML='<div class="t">'+card.n+'</div>'
+            +'<div class="r"><span class="l">时间</span><span class="v">HKT '+ts+'</span></div>'
+            +'<div class="r"><span class="l">波幅</span><span class="v '+cls+'">'+sign+v.toFixed(2)+'%</span></div>';
+          // LW Charts v4: sourceEvent=原始MouseEvent, point=chart坐标
+          const se=param.sourceEvent;
+          const pp=param.point;
+          let left,top;
+          if(se&&se.clientX!==undefined){left=se.clientX+15;top=se.clientY-10;}
+          else if(pp){const rect=chartDiv.getBoundingClientRect();left=rect.left+pp.x+15;top=rect.top+pp.y-10;}
+          else{left=_globalMouseX+15;top=_globalMouseY-10;}
+          if(left+280>window.innerWidth)left=left-300;
+          if(top+120>window.innerHeight)top=top-120;
+          if(top<5)top=5;
+          popup.style.left=left+'px';popup.style.top=top+'px';popup.style.display='block';
         });
+        // 鼠标离开图表时隐藏popup
+        chartDiv.addEventListener('mouseleave',()=>{document.getElementById('popup').style.display='none';});
       };
       setTimeout(createChart,300);
     })(card,pctData,rt);
@@ -1204,7 +1231,8 @@ function buildUI3(){
 // ========== Popup ==========
 function showPopup(param,card,rtData,pctData){
   const popup=document.getElementById('popup');
-  if(!param.event){popup.style.display='none';return;}
+  const se=param.sourceEvent||param.event;
+  if(!se||se.clientX===undefined){popup.style.display='none';return;}
 
   // 找到当前crosshair时间对应的值 — 优先从pctData查百分比
   let pctVal='';
@@ -1253,9 +1281,9 @@ function showPopup(param,card,rtData,pctData){
     ${pctVal!==''?'<div class="r"><span class="l">波幅</span><span class="v '+pctColor+'">'+pctSign+pctVal.toFixed(2)+'%</span></div>':''}
     ${val?'<div class="r"><span class="l">价格</span><span class="v">'+val.toFixed(2)+'</span></div>':''}
     ${segInfo}`;
-  let left=param.event.clientX+15;let top=param.event.clientY-10;
-  if(left+320>window.innerWidth)left=param.event.clientX-330;
-  if(top+180>window.innerHeight)top=param.event.clientY-180;
+  let left=se.clientX+15;let top=se.clientY-10;
+  if(left+320>window.innerWidth)left=se.clientX-330;
+  if(top+180>window.innerHeight)top=se.clientY-180;
   if(top<5)top=5;
   popup.style.left=left+'px';popup.style.top=top+'px';popup.style.display='block';
 }
