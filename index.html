@@ -867,6 +867,108 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid){
 
 // ========== UI1 — 每市场独立chart ==========
 const mktCharts={};
+
+// Mini chart背离高亮: 对比market segment vs SOXL同期趋势
+function drawMiniDivergence(ch,card,mktPctData){
+  const container=ch.chartElement();
+  const uid='mini_'+card.key;
+  const ov=getOrCreateOverlay(container,uid,'div');
+  const ctx=ov.getContext('2d');
+  const W=container.clientWidth,H=container.clientHeight;
+  ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
+
+  const soxl=allD.soxl_baseline;if(!soxl||!Array.isArray(soxl)||!soxl.length)return;
+  // SOXL百分比map (用market的ref做归一化，这样两条线在同一坐标系)
+  const mktRef=mktPctData.length?mktPctData[0].value===0?1:1:1;
+  // SOXL用独立归一化 (用自己的第一个close)
+  const soxlRef=soxl[0].close;
+  const soxlPctMap=new Map();
+  for(const d of soxl)soxlPctMap.set(toHKT(d.time),((d.close-soxlRef)/soxlRef)*100);
+
+  // Market segment数据
+  const segKey=card.key;
+  const segData=allD[segKey];
+  if(!segData||!segData.segments)return;
+
+  const mktPctMap=new Map(mktPctData.map(d=>[d.time,d.value]));
+
+  for(const seg of segData.segments){
+    const segStart=toHKT(seg.startTime||seg.start_time);
+    const segEnd=toHKT(seg.endTime||seg.end_time);
+    if(!segStart||!segEnd)continue;
+
+    // 找segment时间范围内的market bars
+    const segMktBars=mktPctData.filter(d=>d.time>=segStart&&d.time<=segEnd);
+    if(segMktBars.length<2)continue;
+
+    // Market方向
+    const mktStart=segMktBars[0].value;
+    const mktEnd=segMktBars[segMktBars.length-1].value;
+    const mktDir=mktEnd-mktStart;
+
+    // SOXL同期方向
+    let soxlStartPct=null,soxlEndPct=null;
+    for(const[st,sp]of soxlPctMap){
+      if(st>=segStart&&soxlStartPct===null)soxlStartPct=sp;
+      if(st<=segEnd)soxlEndPct=sp;
+    }
+    if(soxlStartPct===null||soxlEndPct===null)continue;
+    const soxlDir=soxlEndPct-soxlStartPct;
+
+    // 判断背离: 方向相反 且 变化>0.05%
+    const isDiv=Math.abs(mktDir)>0.05&&Math.abs(soxlDir)>0.05&&
+      ((mktDir>0&&soxlDir<0)||(mktDir<0&&soxlDir>0));
+
+    // 画阴影区域
+    const x1=ch.timeScale().timeToCoordinate(segMktBars[0].time);
+    const x2=ch.timeScale().timeToCoordinate(segMktBars[segMktBars.length-1].time);
+    if(x1===null||x2===null||x2-x1<2)continue;
+
+    const yTop=Math.min(...segMktBars.map(b=>{
+      const y=ch.priceScale('right').priceToCoordinate(b.value);
+      return y!==null?y:H;
+    }));
+    const yBot=Math.max(...segMktBars.map(b=>{
+      const y=ch.priceScale('right').priceToCoordinate(b.value);
+      return y!==null?y:0;
+    }));
+
+    if(isDiv){
+      // 背离: 橙色高亮
+      ctx.fillStyle='rgba(255,150,0,0.18)';
+      ctx.strokeStyle='rgba(255,120,0,0.6)';
+    }else{
+      // 同向: 淡蓝色
+      ctx.fillStyle='rgba(100,180,255,0.08)';
+      ctx.strokeStyle='rgba(100,180,255,0.2)';
+    }
+    ctx.lineWidth=0.8;
+    ctx.beginPath();
+    ctx.rect(x1,yTop-2,x2-x1,yBot-yTop+4);
+    ctx.fill();ctx.stroke();
+
+    // 段ID标注
+    if(seg.id){
+      const midIdx=Math.floor(segMktBars.length/2);
+      const midX=ch.timeScale().timeToCoordinate(segMktBars[midIdx].time);
+      const midY=ch.priceScale('right').priceToCoordinate(segMktBars[midIdx].value);
+      if(midX!==null&&midY!==null&&midY>12&&midY<H-12){
+        const label=seg.id+(isDiv?' ⚠️':'');
+        ctx.font='bold 8px monospace';
+        const tw=ctx.measureText(label).width;
+        ctx.fillStyle=isDiv?'rgba(255,150,0,0.2)':'rgba(100,180,255,0.12)';
+        ctx.strokeStyle=isDiv?'rgba(255,120,0,0.7)':'rgba(100,180,255,0.4)';
+        ctx.lineWidth=0.6;ctx.beginPath();
+        ctx.roundRect(midX-tw/2-3,midY-12,tw+6,13,2);
+        ctx.fill();ctx.stroke();
+        ctx.fillStyle=isDiv?'#e67e22':'#5a6a7a';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(label,midX,midY-5);
+      }
+    }
+  }
+}
+
 function buildUI1(){
   const container=document.getElementById('mktCards');
   container.innerHTML='';
@@ -1003,6 +1105,11 @@ function buildUI1(){
 
         ch.timeScale().fitContent();
         mktCharts[card.key]=ch;
+
+        // 画背离高亮: market vs SOXL方向对比
+        if(card.key!=='soxl_baseline'&&allD.soxl_baseline&&MKT[card.key]){
+          setTimeout(()=>drawMiniDivergence(ch,card,pctData),500);
+        }
 
         // Popup跟随cursor — 每个mini chart订阅crosshairMove
         ch.subscribeCrosshairMove(p=>{
@@ -1316,9 +1423,22 @@ async function init(){
 }
 async function refreshAll(){allD={};await init();}
 function fitFullRange(){
-  const ch=currentTab===0?charts.ui1:currentTab===1?charts.ui2:charts.ui3;
+  const ch=currentTab===0?Object.values(mktCharts)[0]:currentTab===1?charts.ui2:charts.ui3;
   if(!ch)return;ch.timeScale().fitContent();
-  setTimeout(()=>{if(currentTab===0&&series.ui1.soxl){drawDivergenceOverlay(ch,series.ui1,allD);drawSegmentLabels(ch,series.ui1,allD);}if(currentTab===2)drawSegmentLabels(ch,series.ui3,allD);},200);
+  // Redraw mini divergence overlays for tab0
+  if(currentTab===0){
+    setTimeout(()=>{
+      for(const[k,chart]of Object.entries(mktCharts)){
+        const card=[{key:'segments_SSE980017',mkt:'CN'},{key:'segments_HK_HSCASEMI',mkt:'HK'},{key:'segments_NIKKEI',mkt:'JP'},{key:'segments_KOSPI',mkt:'KR'}].find(c=>c.key===k);
+        if(!card)continue;
+        const rt=allD['rt_'+k];
+        let pctData=[];
+        if(rt&&rt.length){const ref=rt[0].close;pctData=rt.filter(d=>d.close>0).map(d=>({time:toHKT(d.time),value:((d.close-ref)/ref)*100}));}
+        if(pctData.length)drawMiniDivergence(chart,card,pctData);
+      }
+    },300);
+  }
+  if(currentTab===2)setTimeout(()=>drawSegmentLabels(ch,series.ui3,allD),200);
 }
 
 window.addEventListener('load',init);
