@@ -1105,6 +1105,27 @@ function buildUI1(){
         }
 
         ch.timeScale().fitContent();
+        // Fix flat-line appearance for small-range markets (SPY ~0.58%, DAX ~0.93%)
+        // LW Charts auto-scales to data; add invisible padding series to force wider Y range
+        if(pctData&&pctData.length>1){
+          const vals=pctData.map(p=>p.value);
+          const dataMin=Math.min(...vals);
+          const dataMax=Math.max(...vals);
+          const dataRange=dataMax-dataMin;
+          if(dataRange<1.0){ // range < 1% → too flat, add padding
+            const pad=Math.max(0.5, dataRange*2); // padding = 2x data range or 0.5%, whichever is bigger
+            const padMin=dataMin-pad;
+            const padMax=dataMax+pad;
+            // Add invisible series at min/max to force Y-axis range
+            const padSeries=ch.addLineSeries({
+              color:'transparent', width:1, priceLineVisible:false, lastValueVisible:false,
+              crosshairMarkerVisible:false, priceFormat:{type:'custom',formatter:v=>''}
+            });
+            // First and last bar timestamps
+            const t0=pctData[0].time, t1=pctData[pctData.length-1].time;
+            padSeries.setData([{time:t0,value:padMin},{time:t1,value:padMax}]);
+          }
+        }
         mktCharts[card.key]=ch;
 
         // 画背离高亮: market vs SOXL方向对比
