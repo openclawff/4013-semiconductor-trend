@@ -226,7 +226,7 @@ async function loadAll(){
   const files=['soxl_baseline.json','segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
   for(const f of files){try{const r=await fetch(D+'/'+f);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
   for(const f of['CFDGOLD','USDX_FX','BTC_SPOT','CL']){try{const r=await fetch(D+'/futures_'+f+'.json');if(r.ok)allD['f_'+f]=await r.json();}catch(e){}}
-  try{const r=await fetchWithTimeout('/api/bond-hedge',5000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){}
+  try{const r=await fetchWithTimeout('/api/bond-hedge',15000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){console.log('bond-hedge fetch failed:',e.message);}
   // 实时K线（并行，每个带超时）
   const rtPromises=Object.entries(MKT).map(async([k,cfg])=>{
     try{
@@ -282,6 +282,18 @@ function normPct(klines){
   return arr.map(k=>({time:k.time,value:((k.close-ref)/ref)*100}));
 }
 // 期货数据归一化: 同样基于soxlRef
+// 各市场独立归一化（用自己的第一个close）
+function normPctIndependent(klines){
+  if(!klines)return[];
+  let arr=[];
+  if(Array.isArray(klines))arr=klines.map(k=>({time:toHKT(k.time),close:k.close}));
+  else if(klines.t&&klines.c)arr=klines.t.map((t,i)=>({time:toHKT(t),close:klines.c[i]}));
+  if(!arr.length)return[];
+  const ref=arr[0].close;
+  if(!ref)return[];
+  return arr.map(k=>({time:k.time,value:((k.close-ref)/ref)*100}));
+}
+// 期货数据归一化: 基于soxlRef
 function normPctHKT(data){
   if(!data||!data.length)return[];
   const ref=getSoxlRef();
@@ -936,9 +948,9 @@ function toggleMktCard(header){
 // ========== UI2 ==========
 function buildUI2(){
   const ch=makeChart('chart2');charts.ui2=ch;series.ui2={};
-  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',1,'SOXL/3',true);s.setData(normPct(allD.soxl_baseline));series.ui2.soxl=s;}
+  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',1,'SOXL/3',true);s.setData(normPctIndependent(allD.soxl_baseline));series.ui2.soxl=s;}
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
-    if(allD[k]){const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctHKT(allD[k]));series.ui2[k]=s;}
+    if(allD[k]){const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctIndependent(allD[k]));series.ui2[k]=s;}
   }
   ch.subscribeCrosshairMove(p=>{if(!p||!p.time){document.getElementById('popup').style.display='none';return;}showPopup(p,null);});
   // 加载pairwise divergence overlay
@@ -955,10 +967,10 @@ function buildUI2(){
 // ========== UI3 ==========
 function buildUI3(){
   const ch=makeChart('chart3');charts.ui3=ch;series.ui3={};
-  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',2,'SOXL/3 24h');s.setData(normPct(allD.soxl_baseline));series.ui3.soxl=s;}
-  for(const[k,cfg]of Object.entries(MKT)){const d=allD[k];if(d&&(d.t||Array.isArray(d))){const ls=addLine(ch,cfg.c,2,cfg.n);ls.setData(normPct(d));series.ui3[k]=ls;}}
+  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',2,'SOXL/3 24h');s.setData(normPctIndependent(allD.soxl_baseline));series.ui3.soxl=s;}
+  for(const[k,cfg]of Object.entries(MKT)){const d=allD[k];if(d&&(d.t||Array.isArray(d))){const ls=addLine(ch,cfg.c,2,cfg.n);ls.setData(normPctIndependent(d));series.ui3[k]=ls;}}
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD70088',n:'黄金',w:1},f_USDX_FX:{c:'#007bff88',n:'DXY',w:1},f_BTC_SPOT:{c:'#F7931A88',n:'BTC',w:1}})){
-    if(allD[k]){const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);s.setData(normPctHKT(allD[k]));series.ui3[k]=s;}
+    if(allD[k]){const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);s.setData(normPctIndependent(allD[k]));series.ui3[k]=s;}
   }
   // 加载pairwise divergence + segment labels
   if(allD.soxl_baseline){
@@ -1063,11 +1075,18 @@ function buildCorrelationPanel(){
   for(const pair of CORR_PAIRS){
     const dA=allD[pair.a.key],dB=allD[pair.b.key];
     if(!dA||!dB)continue;
-    // 转换为HKT百分比
-    const ref=getSoxlRef();
+    // 转换为HKT百分比（各市场独立归一化）
     const toPct=(d)=>{
-      if(Array.isArray(d))return d.map(p=>({time:toHKT(p.time),value:((p.close-ref)/ref)*100}));
-      if(d.t&&d.c)return d.t.map((t,i)=>({time:toHKT(t),value:((d.c[i]-ref)/ref)*100}));
+      if(Array.isArray(d)){
+        if(!d.length)return[];
+        const ref=d[0].close;
+        return d.map(p=>({time:toHKT(p.time),value:((p.close-ref)/ref)*100}));
+      }
+      if(d.t&&d.c){
+        if(!d.t.length)return[];
+        const ref=d.c[0];
+        return d.t.map((t,i)=>({time:toHKT(t),value:((d.c[i]-ref)/ref)*100}));
+      }
       return[];
     };
     const pctA=toPct(dA),pctB=toPct(dB);
@@ -1127,8 +1146,8 @@ function buildCorrelationPanel(){
         crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
         timeScale:{timeVisible:true,secondsVisible:false}
       });
-      const sA=ch.addLine({color:pair.a.c,width:2,name:pair.a.n});
-      const sB=ch.addLine({color:pair.b.c,width:2,name:pair.b.n});
+      const sA=ch.addLineSeries({color:pair.a.c,width:2,name:pair.a.n});
+      const sB=ch.addLineSeries({color:pair.b.c,width:2,name:pair.b.n});
       sA.setData(pctA);sB.setData(pctB);
 
       // 画背离阴影
