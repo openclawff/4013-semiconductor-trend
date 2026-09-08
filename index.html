@@ -1285,12 +1285,35 @@ function buildUI2(){
 }
 
 // ========== UI3 ==========
+// Remove consecutive bars with same close (market-closed placeholders)
+function dedupFlatBars(d){
+  if(!d||!d.t||!d.c)return d;
+  const nt=[],no=[],nh=[],nl=[],nc=[],nv=[];
+  let prev=null;
+  for(let i=0;i<d.t.length;i++){
+    if(d.c[i]===prev)continue; // skip duplicate
+    prev=d.c[i];
+    nt.push(d.t[i]);no.push(d.o[i]);nh.push(d.h[i]);nl.push(d.l[i]);nc.push(d.c[i]);
+    if(d.v)nv.push(d.v[i]);
+  }
+  return{t:nt,o:no,h:nh,l:nl,c:nc,v:nv.length?nv:undefined,segments:d.segments,dateRange:d.dateRange};
+}
+// Same for array format
+function dedupFlatBarsArr(arr){
+  if(!arr||!arr.length)return arr;
+  const out=[];let prev=null;
+  for(const bar of arr){
+    if(bar.close===prev)continue;
+    prev=bar.close;out.push(bar);
+  }
+  return out;
+}
 function buildUI3(){
   const ch=makeChart('chart3');charts.ui3=ch;series.ui3={};
-  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',2,'SOXL/3 24h');s.setData(normPctIndependent(allD.soxl_baseline));series.ui3.soxl=s;}
-  for(const[k,cfg]of Object.entries(MKT)){const d=allD[k];if(d&&(d.t||Array.isArray(d))){const ls=addLine(ch,cfg.c,2,cfg.n);ls.setData(normPctIndependent(d));series.ui3[k]=ls;}}
+  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',2,'SOXL/3 24h');s.setData(normPctIndependent(dedupFlatBars(allD.soxl_baseline)));series.ui3.soxl=s;}
+  for(const[k,cfg]of Object.entries(MKT)){const d=allD[k];if(d&&(d.t||Array.isArray(d))){const cleaned=Array.isArray(d)?dedupFlatBarsArr(d):dedupFlatBars(d);const ls=addLine(ch,cfg.c,2,cfg.n);ls.setData(normPctIndependent(cleaned));series.ui3[k]=ls;}}
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD70088',n:'黄金',w:1},f_USDX_FX:{c:'#007bff88',n:'DXY',w:1},f_BTC_SPOT:{c:'#F7931A88',n:'BTC',w:1}})){
-    if(allD[k]){const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);s.setData(normPctIndependent(allD[k]));series.ui3[k]=s;}
+    if(allD[k]){const cleaned=Array.isArray(allD[k])?dedupFlatBarsArr(allD[k]):dedupFlatBars(allD[k]);const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);s.setData(normPctIndependent(cleaned));series.ui3[k]=s;}
   }
   // 加载pairwise divergence + segment labels
   if(allD.soxl_baseline){
