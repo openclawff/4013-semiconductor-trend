@@ -236,6 +236,8 @@ async function loadAll(){
   // SOXL: fetch from 5050 via server proxy (real-time, not static file)
   try{const r=await fetchWithTimeout('/api/soxl',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.soxl_baseline=d;console.log('SOXL 5050 OK:',d.length,'bars, last:',new Date(d[d.length-1].time*1000).toISOString());}}}catch(e){console.warn('SOXL 5050 failed:',e.message);}
   for(const f of['CFDGOLD','USDX_FX','BTC_SPOT','CL']){try{const r=await fetch(D+'/futures_'+f+'.json');if(r.ok)allD['f_'+f]=await r.json();}catch(e){}}
+  // US SPY: from 5050 via server proxy (real-time)
+  try{const r=await fetchWithTimeout('/api/us_spy',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.f_SPX=d;console.log('SPY 5050 OK:',d.length,'bars');}}}catch(e){console.warn('SPY 5050 failed:',e.message);}
   try{const r=await fetchWithTimeout('/api/bond-hedge',15000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){console.log('bond-hedge fetch failed:',e.message);}
   // 实时K线（并行，每个带超时）
   const rtPromises=Object.entries(MKT).map(async([k,cfg])=>{
@@ -972,8 +974,8 @@ function buildUI1(){
     {key:'segments_HK_HSCASEMI',n:'港股半导体',c:'#e83e8c',mkt:'HK',session:SESSIONS.HK},
     {key:'segments_NIKKEI',n:'日本日经',c:'#0366d6',mkt:'JP',session:SESSIONS.JP},
     {key:'segments_KOSPI',n:'韩国KOSPI',c:'#db6d28',mkt:'KR',session:SESSIONS.KR},
-    {key:'rt_f_SPX',n:'美股 S&P',c:'#6f42c1',mkt:'US',session:SESSIONS.US},
-    {key:'rt_f_EUSTX50',n:'欧股 STOXX',c:'#20c997',mkt:'EU',session:SESSIONS.EU},
+    {key:'f_SPX',n:'美股 S&P',c:'#6f42c1',mkt:'US',session:SESSIONS.US},
+    {key:'f_EUSTX50',n:'欧股 STOXX',c:'#20c997',mkt:'EU',session:SESSIONS.EU},
     {key:'soxl_baseline',n:'SOXL/3 24h',c:'#959da5',mkt:'SOXL',session:null}
   ];
 

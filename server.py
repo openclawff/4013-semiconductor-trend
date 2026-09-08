@@ -14,6 +14,8 @@ BOND_CACHE_TTL = 300  # 5min
 SURGE_CACHE = {'global': None, 'commodity': None, 'ts': 0}
 SOXL_CACHE = {'data': None, 'ts': 0}
 SOXL_CACHE_TTL = 60  # 1min refresh
+SPY_CACHE = {'data': None, 'ts': 0}
+SPY_CACHE_TTL = 60
 
 # Monitor cache - stores latest analysis output
 MONITOR_CACHE = {'data': None, 'ts': 0}
@@ -52,6 +54,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.proxy_surge()
         elif self.path.startswith('/api/soxl'):
             self.proxy_soxl()
+        elif self.path.startswith('/api/us_spy'):
+            self.proxy_us_spy()
         elif self.path.startswith('/api/monitor'):
             self.handle_monitor()
         elif self.path.startswith('/api/analysis'):
@@ -155,6 +159,44 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 })
             SOXL_CACHE['data'] = bars
             SOXL_CACHE['ts'] = now
+            self.send_json(bars)
+        except Exception as e:
+            self.send_response(502)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
+
+    def proxy_us_spy(self):
+        """GET /api/us_spy - fetch SPY swap klines from 5050, cache 60s."""
+        now = time.time()
+        if SPY_CACHE.get('data') and now - SPY_CACHE.get('ts', 0) < SPY_CACHE_TTL:
+            self.send_json(SPY_CACHE['data'])
+            return
+        try:
+            sql = ("SELECT period_start, open, high, low, close, volume "
+                   "FROM stock_swap_klines "
+                   "WHERE contract_symbol='RSPYUSDT' AND stock_ticker='NYSE:SPY' "
+                   "ORDER BY period_start ASC")
+            payload = json.dumps({'sql': sql, 'project': '3400'}).encode()
+            req = urllib.request.Request(SOXL_5050_URL, data=payload,
+                                        headers={'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                result = json.loads(r.read().decode())
+            bars = []
+            for row in result.get('rows', []):
+                dt = datetime.strptime(row['period_start'], '%Y-%m-%dT%H:%M:%S')
+                epoch = int(dt.replace(tzinfo=timezone(timedelta(hours=8))).timestamp())
+                bars.append({
+                    'time': epoch,
+                    'open': float(row['open']),
+                    'high': float(row['high']),
+                    'low': float(row['low']),
+                    'close': float(row['close']),
+                    'volume': float(row['volume'])
+                })
+            SPY_CACHE['data'] = bars
+            SPY_CACHE['ts'] = now
             self.send_json(bars)
         except Exception as e:
             self.send_response(502)
