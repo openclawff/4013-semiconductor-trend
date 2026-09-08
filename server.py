@@ -132,7 +132,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         try:
             sql = ("SELECT period_start, open, high, low, close, volume "
                    "FROM stock_swap_klines "
-                   "WHERE contract_symbol='RSOXLUSDT' AND stock_ticker='NYSE:SOXL' "
+                   "WHERE contract_symbol='SOXLUSDT' AND stock_ticker='NYSE:SOXL' "
                    "ORDER BY period_start ASC")
             payload = json.dumps({'sql': sql, 'project': '3400'}).encode()
             req = urllib.request.Request(SOXL_5050_URL, data=payload,
