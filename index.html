@@ -875,38 +875,42 @@ function drawMiniDivergence(ch,card,mktPctData){
   const ov=getOrCreateOverlay(container,uid,'div');
   const ctx=ov.getContext('2d');
   const W=container.clientWidth,H=container.clientHeight;
+  if(W<10||H<10)return;
   ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
 
   const soxl=allD.soxl_baseline;if(!soxl||!Array.isArray(soxl)||!soxl.length)return;
-  // SOXL百分比map (用market的ref做归一化，这样两条线在同一坐标系)
-  const mktRef=mktPctData.length?mktPctData[0].value===0?1:1:1;
-  // SOXL用独立归一化 (用自己的第一个close)
   const soxlRef=soxl[0].close;
-  const soxlPctMap=new Map();
-  for(const d of soxl)soxlPctMap.set(toHKT(d.time),((d.close-soxlRef)/soxlRef)*100);
+  const soxlPctArr=soxl.filter(d=>d.close>0).map(d=>({time:toHKT(d.time),value:((d.close-soxlRef)/soxlRef)*100}));
+  const soxlPctMap=new Map(soxlPctArr.map(d=>[d.time,d.value]));
 
-  // Market segment数据
   const segKey=card.key;
   const segData=allD[segKey];
-  if(!segData||!segData.segments)return;
+  if(!segData||!segData.segments||!mktPctData||!mktPctData.length)return;
 
-  const mktPctMap=new Map(mktPctData.map(d=>[d.time,d.value]));
+  // 手动计算坐标系 (LW Charts v4没有priceToCoordinate)
+  const PAD={top:5,bottom:5,left:0,right:0};
+  const drawW=W-PAD.left-PAD.right;
+  const drawH=H-PAD.top-PAD.bottom;
+  const allVals=mktPctData.map(d=>d.value);
+  let yMin=Math.min(...allVals),yMax=Math.max(...allVals);
+  if(yMin===yMax){yMin-=1;yMax+=1;}
+  const yRange=yMax-yMin;
+  const tMin=mktPctData[0].time;
+  const tMax=mktPctData[mktPctData.length-1].time;
+  const tRange=tMax-tMin;
+  if(tRange<=0)return;
+
+  function tx(t){return PAD.left+((t-tMin)/tRange)*drawW;}
+  function ty(v){return PAD.top+(1-(v-yMin)/yRange)*drawH;}
 
   for(const seg of segData.segments){
     const segStart=toHKT(seg.startTime||seg.start_time);
     const segEnd=toHKT(seg.endTime||seg.end_time);
     if(!segStart||!segEnd)continue;
-
-    // 找segment时间范围内的market bars
     const segMktBars=mktPctData.filter(d=>d.time>=segStart&&d.time<=segEnd);
     if(segMktBars.length<2)continue;
 
-    // Market方向
-    const mktStart=segMktBars[0].value;
-    const mktEnd=segMktBars[segMktBars.length-1].value;
-    const mktDir=mktEnd-mktStart;
-
-    // SOXL同期方向
+    const mktDir=segMktBars[segMktBars.length-1].value-segMktBars[0].value;
     let soxlStartPct=null,soxlEndPct=null;
     for(const[st,sp]of soxlPctMap){
       if(st>=segStart&&soxlStartPct===null)soxlStartPct=sp;
@@ -914,31 +918,19 @@ function drawMiniDivergence(ch,card,mktPctData){
     }
     if(soxlStartPct===null||soxlEndPct===null)continue;
     const soxlDir=soxlEndPct-soxlStartPct;
-
-    // 判断背离: 方向相反 且 变化>0.05%
     const isDiv=Math.abs(mktDir)>0.05&&Math.abs(soxlDir)>0.05&&
       ((mktDir>0&&soxlDir<0)||(mktDir<0&&soxlDir>0));
 
-    // 画阴影区域
-    const x1=ch.timeScale().timeToCoordinate(segMktBars[0].time);
-    const x2=ch.timeScale().timeToCoordinate(segMktBars[segMktBars.length-1].time);
-    if(x1===null||x2===null||x2-x1<2)continue;
-
-    const yTop=Math.min(...segMktBars.map(b=>{
-      const y=ch.priceScale('right').priceToCoordinate(b.value);
-      return y!==null?y:H;
-    }));
-    const yBot=Math.max(...segMktBars.map(b=>{
-      const y=ch.priceScale('right').priceToCoordinate(b.value);
-      return y!==null?y:0;
-    }));
+    const x1=tx(segMktBars[0].time);
+    const x2=tx(segMktBars[segMktBars.length-1].time);
+    if(x2-x1<2)continue;
+    const yTop=Math.min(...segMktBars.map(b=>ty(b.value)));
+    const yBot=Math.max(...segMktBars.map(b=>ty(b.value)));
 
     if(isDiv){
-      // 背离: 橙色高亮
       ctx.fillStyle='rgba(255,150,0,0.18)';
       ctx.strokeStyle='rgba(255,120,0,0.6)';
     }else{
-      // 同向: 淡蓝色
       ctx.fillStyle='rgba(100,180,255,0.08)';
       ctx.strokeStyle='rgba(100,180,255,0.2)';
     }
@@ -950,9 +942,9 @@ function drawMiniDivergence(ch,card,mktPctData){
     // 段ID标注
     if(seg.id){
       const midIdx=Math.floor(segMktBars.length/2);
-      const midX=ch.timeScale().timeToCoordinate(segMktBars[midIdx].time);
-      const midY=ch.priceScale('right').priceToCoordinate(segMktBars[midIdx].value);
-      if(midX!==null&&midY!==null&&midY>12&&midY<H-12){
+      const midX=tx(segMktBars[midIdx].time);
+      const midY=ty(segMktBars[midIdx].value);
+      if(midY>12&&midY<H-12){
         const label=seg.id+(isDiv?' ⚠️':'');
         ctx.font='bold 8px monospace';
         const tw=ctx.measureText(label).width;
