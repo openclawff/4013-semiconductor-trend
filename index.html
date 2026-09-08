@@ -1191,6 +1191,8 @@ function switchTab(idx){
   document.getElementById('intradayPanel').style.display=idx===0?'block':'none';
   document.getElementById('offhoursPanel').style.display=idx===1?'block':'none';
   document.getElementById('bondPanel').style.display=idx===1?'block':'none';
+  // tab4: 隐藏chart-wrap，避免空白占位
+  document.querySelector('.chart-wrap').style.display=idx===3?'none':'block';
   document.getElementById('corrContainer').style.display=idx===3?'block':'none';
   document.getElementById('legend').style.display=idx===3?'none':'flex';
   document.getElementById('marketBar').style.display=idx===3?'none':'flex';
