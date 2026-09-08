@@ -1136,7 +1136,7 @@ function buildUI1(){
         // Popup跟随cursor — 每个mini chart订阅crosshairMove
         ch.subscribeCrosshairMove(p=>{
           if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
-          showPopup(p,card,rt);
+          showPopup(p,card,rt,pctData);
         });
       };
       setTimeout(createChart,300);
@@ -1202,16 +1202,25 @@ function buildUI3(){
 }
 
 // ========== Popup ==========
-function showPopup(param,card,rtData){
+function showPopup(param,card,rtData,pctData){
   const popup=document.getElementById('popup');
   if(!param.event){popup.style.display='none';return;}
 
-  // 找到当前crosshair时间对应的数据
+  // 找到当前crosshair时间对应的值 — 优先从pctData查百分比
+  let pctVal='';
+  if(pctData&&pctData.length){
+    // param.time是HKT时间戳, pctData.time也是HKT
+    const closest=pctData.reduce((best,p)=>{
+      const diff=Math.abs(p.time-param.time);
+      return diff<Math.abs(best.time-param.time)?p:best;
+    });
+    if(Math.abs(closest.time-param.time)<300) pctVal=closest.value;
+  }
+  // 同时查价格
   let val='';
   const rt=rtData||(card&&card.rt)||[];
   if(rt.length){
-    // 找最近的数据点 — param.time是HKT时间，需要转回原始时间匹配
-    const t=param.time-HKT_OFFSET; // 转回原始时间戳
+    const t=param.time-HKT_OFFSET;
     for(const bar of rt){
       if(bar.time===t||Math.abs(bar.time-t)<60){val=bar.close;break;}
     }
@@ -1237,8 +1246,11 @@ function showPopup(param,card,rtData){
   }
 
   const timeStr=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+  const pctColor=pctVal>0?'up':pctVal<0?'down':'rg';
+  const pctSign=pctVal>0?'+':'';
   popup.innerHTML=`<div class="t">${card?.n||''}</div>
     <div class="r"><span class="l">时间</span><span class="v">HKT ${timeStr}</span></div>
+    ${pctVal!==''?'<div class="r"><span class="l">波幅</span><span class="v '+pctColor+'">'+pctSign+pctVal.toFixed(2)+'%</span></div>':''}
     ${val?'<div class="r"><span class="l">价格</span><span class="v">'+val.toFixed(2)+'</span></div>':''}
     ${segInfo}`;
   let left=param.event.clientX+15;let top=param.event.clientY-10;
