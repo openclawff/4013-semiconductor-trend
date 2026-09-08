@@ -269,7 +269,7 @@ async function loadAll(){
   const offSymbols={CFDGOLD:'黄金',USDX_FX:'DXY',BTC_SPOT:'BTC',CL:'原油'};
   const offPromises=Object.entries(offSymbols).map(async([sym,name])=>{
     try{
-      const r=await fetchWithTimeout(API4002+'/history?symbol='+sym+'&resolution=60&from='+(Math.floor(Date.now()/1000)-86400*7)+'&to='+Math.floor(Date.now()/1000), 10000);
+      const r=await fetchWithTimeout(API4002+'/history?symbol='+sym+'&resolution=1&from='+(Math.floor(Date.now()/1000)-86400*7)+'&to='+Math.floor(Date.now()/1000), 10000);
       if(r.ok){const d=await r.json();if(d.s==='ok'&&d.t&&d.t.length){allD['f_'+sym]=d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));console.log('4002 OK:',name,allD['f_'+sym].length,'bars');}}
     }catch(e){console.warn('4002 FAIL:',name,e.message);}
   });
