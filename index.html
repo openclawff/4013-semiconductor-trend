@@ -833,17 +833,22 @@ function renderBondPanel(){
 
 // ========== Pairwise Divergence Overlay ==========
 // 基于RT数据计算市场间背离（在重叠交易时间内检测方向相反）
-function drawPairwiseDivergence(ch,seriesMap,allData,uid){
+function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
   const container=ch.chartElement();
   const ov=getOrCreateOverlay(container,uid,'pwd');
   const ctx=ov.getContext('2d');const W=container.clientWidth,H=container.clientHeight;ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
 
-  const mktKeys=Object.keys(MKT);
-  // 收集每个市场的RT百分比数据
-  const mktRT={};
-  for(const k of mktKeys){
-    const rt=allData['rtPct_'+k];
-    if(rt&&rt.length)mktRT[k]=rt;
+  // 默认pair: 市场交叉比较
+  let pairs=[];
+  if(customPairs){
+    pairs=customPairs;
+  }else{
+    const mktKeys=Object.keys(MKT);
+    for(let i=0;i<mktKeys.length;i++){
+      for(let j=i+1;j<mktKeys.length;j++){
+        pairs.push({a:mktKeys[i],b:mktKeys[j]});
+      }
+    }
   }
 
   const pairColors=[
@@ -856,33 +861,39 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid){
   ];
 
   let pi=0;
-  for(let i=0;i<mktKeys.length;i++){
-    for(let j=i+1;j<mktKeys.length;j++){
-      const kA=mktKeys[i],kB=mktKeys[j];
-      const rtA=mktRT[kA],rtB=mktRT[kB];
-      if(!rtA||!rtB)continue;
-      const sA=seriesMap[kA],sB=seriesMap[kB];
-      if(!sA||!sB)continue;
+  for(const pair of pairs){
+    const kA=pair.a,kB=pair.b;
+    // 尝试rtPct_数据；若无则用series标准化数据
+    let rtA=allData['rtPct_'+kA]||allData['rt_'+kA];
+    let rtB=allData['rtPct_'+kB]||allData['rt_'+kB];
+    const sA=seriesMap[kA],sB=seriesMap[kB];
+    if(!sA||!sB)continue;
+    if(!rtA||!rtB){
+      // 用series data作为fallback
+      try{rtA=sA.data();}catch(e){continue;}
+      try{rtB=sB.data();}catch(e){continue;}
+      if(!rtA||!rtA.length||!rtB||!rtB.length)continue;
+    }
 
-      const pc=pairColors[pi%pairColors.length];
+    const pc=pairColors[pi%pairColors.length];
 
-      // 构建时间→值映射
-      const mapA=new Map(rtA.map(b=>[b.time,b.value]));
-      const mapB=new Map(rtB.map(b=>[b.time,b.value]));
+    // 构建时间→值映射
+    const mapA=new Map(rtA.map(b=>[b.time,b.value]));
+    const mapB=new Map(rtB.map(b=>[b.time,b.value]));
 
-      // 找两个市场的重叠时间点
-      const commonTimes=[];
-      for(const[ts]of mapA){if(mapB.has(ts))commonTimes.push(ts);}
-      commonTimes.sort((a,b)=>a-b);
+    // 找两个市场的重叠时间点
+    const commonTimes=[];
+    for(const[ts]of mapA){if(mapB.has(ts))commonTimes.push(ts);}
+    commonTimes.sort((a,b)=>a-b);
 
-      if(commonTimes.length<10){pi++;continue;}
+    if(commonTimes.length<10){pi++;continue;}
 
-      // 用滑动窗口检测背离（60分钟窗口，每10分钟步进）
-      const WINDOW=60;const STEP=10;
-      for(let si=0;si<commonTimes.length-WINDOW;si+=STEP){
-        const winTimes=commonTimes.slice(si,si+WINDOW);
-        const valsA=winTimes.map(t=>mapA.get(t));
-        const valsB=winTimes.map(t=>mapB.get(t));
+    // 用滑动窗口检测背离（60分钟窗口，每10分钟步进）
+    const WINDOW=60;const STEP=10;
+    for(let si=0;si<commonTimes.length-WINDOW;si+=STEP){
+      const winTimes=commonTimes.slice(si,si+WINDOW);
+      const valsA=winTimes.map(t=>mapA.get(t));
+      const valsB=winTimes.map(t=>mapB.get(t));
 
         // 计算窗口内方向
         const dirA=valsA[valsA.length-1]-valsA[0];
@@ -912,8 +923,10 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid){
         ctx.beginPath();ctx.rect(x1,topY,x2-x1,botY-topY);ctx.fill();ctx.stroke();
 
         // 标注
-        const cfgA=MKT[kA],cfgB=MKT[kB];
-        const label=`⚠️ ${cfgA.n}↔${cfgB.n}`;
+        const offNames={soxl:'SOXL',f_CFDGOLD:'黄金',f_USDX_FX:'DXY',f_BTC_SPOT:'BTC',f_CL:'原油'};
+        const nameA=MKT[kA]?.n||offNames[kA]||kA;
+        const nameB=MKT[kB]?.n||offNames[kB]||kB;
+        const label=`⚠️ ${nameA}↔${nameB}`;
         const labelY=topY-5;
         if(labelY>10&&labelY<H-10){
           ctx.font='bold 9px monospace';const tw=ctx.measureText(label).width;
@@ -925,7 +938,6 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid){
       }
       pi++;
     }
-  }
 }
 
 // ========== UI1 — 每市场独立chart ==========
@@ -1294,7 +1306,18 @@ function buildUI2(){
   // 加载pairwise divergence overlay
   if(allD.soxl_baseline){
     const uid2='ui2';
-    const redraw2=()=>{drawPairwiseDivergence(ch,series.ui2,allD,uid2);};
+    // 盘外背离: off-hours pairs
+    const offPairs=[
+      {a:'soxl',b:'f_CFDGOLD',label:'SOXL↔黄金'},
+      {a:'soxl',b:'f_USDX_FX',label:'SOXL↔DXY'},
+      {a:'soxl',b:'f_BTC_SPOT',label:'SOXL↔BTC'},
+      {a:'soxl',b:'f_CL',label:'SOXL↔原油'},
+      {a:'f_CFDGOLD',b:'f_USDX_FX',label:'黄金↔DXY'},
+      {a:'f_USDX_FX',b:'f_BTC_SPOT',label:'DXY↔BTC'},
+      {a:'f_CFDGOLD',b:'f_BTC_SPOT',label:'黄金↔BTC'},
+      {a:'f_CL',b:'f_USDX_FX',label:'原油↔DXY'},
+    ];
+    const redraw2=()=>{drawPairwiseDivergence(ch,series.ui2,allD,uid2,offPairs);};
     setTimeout(()=>{ch.timeScale().fitContent();setTimeout(redraw2,300);},800);
     ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw2,80));
     new ResizeObserver(()=>{setTimeout(redraw2,150);}).observe(ch.chartElement());
