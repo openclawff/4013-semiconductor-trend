@@ -8,545 +8,1205 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#333}
-.header{background:#fff;border-bottom:1px solid #e1e4e8;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-.header h1{font-size:16px;font-weight:600;color:#24292e}
-.header .sub{font-size:12px;color:#586069;margin-left:10px}
+.header{background:#fff;border-bottom:1px solid #e1e4e8;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:15px;font-weight:600;color:#24292e}
+.header .sub{font-size:11px;color:#586069;margin-left:8px}
+.header-right{display:flex;gap:8px;align-items:center}
 .tabs{display:flex;background:#fff;border-bottom:2px solid #e1e4e8;padding:0 16px}
-.tab{padding:10px 18px;font-size:13px;font-weight:500;color:#586069;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;color:#586069;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
 .tab:hover{color:#24292e}
 .tab.active{color:#0366d6;border-bottom-color:#0366d6;font-weight:600}
-.tab .badge{display:inline-block;background:#ffc107;color:#856404;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:4px;font-weight:600}
-.legend{display:flex;gap:14px;padding:8px 20px;background:#fff;border-bottom:1px solid #e1e4e8;flex-wrap:wrap}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#586069}
-.legend-item .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.tab .badge{display:inline-block;background:#ffc107;color:#856404;font-size:9px;padding:1px 4px;border-radius:6px;margin-left:3px;font-weight:600}
+.market-bar{display:flex;gap:10px;padding:6px 20px;background:#fff;border-bottom:1px solid #e1e4e8;flex-wrap:wrap;align-items:center}
+.market-bar .mkt{display:flex;align-items:center;gap:4px;font-size:11px;color:#586069}
+.market-bar .mkt .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.market-bar .mkt .dot.open{background:#28a745;box-shadow:0 0 4px #28a74566}
+.market-bar .mkt .dot.closed{background:#dc3545}
+.market-bar .mkt .dot.pre{background:#ffc107}
+.market-bar .sep{color:#d1d5da;font-size:10px}
+.market-bar .clock{font-size:11px;color:#0366d6;font-weight:600;margin-left:auto}
+.legend{display:flex;gap:12px;padding:6px 20px;background:#fff;border-bottom:1px solid #e1e4e8;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#586069}
+.legend-item .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 .legend-item .lbl{font-weight:500}
-.legend-item .st{color:#8b949e}
-.chart-wrap{position:relative;background:#fff;margin:8px 12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;height:calc(100vh - 180px);min-height:350px}
+.legend-item .st{color:#8b949e;font-size:9px}
+.chart-wrap{position:relative;background:#fff;margin:6px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:visible;height:calc(100vh - 260px);min-height:300px}
+.chart-wrap .tv-lightweight-charts [class*="price"]{display:none!important}
+.chart-wrap .tv-lightweight-charts [class*="Price"]{display:none!important}
 #chart1,#chart2,#chart3{width:100%;height:100%}
 .panel{display:none;width:100%;height:100%}
 .panel.active{display:block}
-.popup{display:none;position:fixed;background:#fff;border:1px solid #d1d5da;border-radius:8px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,.12);font-size:12px;z-index:100;max-width:340px;pointer-events:none}
-.popup .t{font-weight:600;font-size:13px;margin-bottom:6px;color:#24292e}
-.popup .r{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.popup{display:none;position:fixed;background:#fff;border:1px solid #d1d5da;border-radius:8px;padding:10px 14px;box-shadow:0 4px 12px rgba(0,0,0,.12);font-size:11px;z-index:100;max-width:320px;pointer-events:none}
+.popup .t{font-weight:600;font-size:12px;margin-bottom:4px;color:#24292e}
+.popup .r{display:flex;justify-content:space-between;gap:8px;padding:1px 0}
 .popup .r .l{color:#586069}
 .popup .r .v{font-weight:500}
 .popup .r .v.up{color:#28a745}.popup .r .v.down{color:#dc3545}.popup .r .v.rg{color:#8b949e}
-.popup .trs-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px}
-.popup .trs-badge.bull{background:#d4edda;color:#155724}
-.popup .trs-badge.bear{background:#f8d7da;color:#721c24}
-.popup .trs-badge.mix{background:#fff3cd;color:#856404}
-.popup .div-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px;margin-left:4px}
-.popup .div-badge.div{background:#ffc107;color:#856404}
-.popup .div-badge.ok{background:#d4edda;color:#155724}
-.popup .vol-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px;margin-left:4px}
-.popup .vol-badge.surge{background:#ffeeba;color:#856404}
-.popup .vol-badge.normal{background:#e2e3e5;color:#383d41}
-.popup .log{margin-top:6px;padding-top:6px;border-top:1px solid #eee;font-size:11px;color:#586069}
+.ap{position:absolute;background:rgba(255,255,255,.96);border:1px solid #e1e4e8;border-radius:8px;padding:10px 14px;font-size:11px;z-index:10;overflow-y:auto;max-height:75%}
+.ap .ap-t{font-weight:600;font-size:12px;margin-bottom:6px;color:#24292e;border-bottom:1px solid #e1e4e8;padding-bottom:4px;cursor:pointer;user-select:none}
+.ap .ap-t::before{content:'▶ ';font-size:10px}
+.ap.open .ap-t::before{content:'▼ '}
+.ap .ap-body{display:none}
+.ap.open .ap-body{display:block}
+.ap .ap-s{margin-bottom:8px}
+.ap .ap-st{font-weight:600;font-size:11px;color:#586069;margin-bottom:3px}
+.ap .ap-r{display:flex;justify-content:space-between;padding:2px 0;font-size:10px}
+.ap .ap-l{color:#586069}
+.ap .ap-v{font-weight:600}
+.ap .ap-v.up{color:#28a745}
+.ap .ap-v.down{color:#dc3545}
+.ap .ap-v.warn{color:#e67e22}
+.ap .ap-v.ok{color:#28a745}
+.ap .ap-v.neutral{color:#8b949e}
+.ap .ap-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
+.ap .ap-tag.surge{background:#ffc10722;color:#856404}
+.ap .ap-tag.burst{background:#dc354522;color:#856404}
+.ap .ap-tag.normal{background:#d4edda22;color:#155724}
+.ap .ap-tag.div{background:#ffc10722;color:#856404}
+.ap .ap-tag.sync{background:#d4edda22;color:#155724}
+.ap .ap-tag.inv{background:#f8d7da22;color:#721c24}
+.ap .ap-tag.relay{background:#cce5ff22;color:#004085}
+.ap .ap-tag.turn{background:#dc354522;color:#721c24}
+.ap .ap-tag.safe{background:#d4edda22;color:#155724}
+/* 单市场卡片 */
+.mkt-card{background:#fff;margin:4px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.mkt-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer;user-select:none;border-bottom:1px solid #f0f0f0;transition:background .15s}
+.mkt-card-hdr:hover{background:#f6f8fa}
+.mkt-card-hdr .mkt-name{font-size:13px;font-weight:600;color:#24292e}
+.mkt-card-hdr .mkt-status{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.mkt-card-hdr .mkt-status.open{background:#d4edda;color:#155724}
+.mkt-card-hdr .mkt-status.closed{background:#f8d7da;color:#721c24}
+.mkt-card-hdr .mkt-status.pre{background:#fff3cd;color:#856404}
+.mkt-card-hdr .mkt-status.h24{background:#cce5ff;color:#004085}
+.mkt-card-hdr .arrow{font-size:11px;color:#8b949e;transition:transform .2s}
+.mkt-card-hdr.open .arrow{transform:rotate(90deg)}
+.mkt-card-body{display:none;padding:0}
+.mkt-card-body.open{display:block}
+.mkt-card-chart{width:100%;height:180px}
+.mkt-card-info{padding:6px 14px;font-size:10px;color:#586069;border-top:1px solid #f0f0f0;display:flex;gap:12px;flex-wrap:wrap}
+.mkt-card-info span{white-space:nowrap}
+.intraday-panel{top:8px;right:12px;width:280px}
+.offhours-panel{top:8px;left:12px;width:310px}
+.bond-panel{bottom:0;left:0;right:0;border-top:1px solid #e1e4e8;border-left:none;border-right:none;border-bottom:none;border-radius:0;max-height:90px}
+/* 相关性背离 collapsible */
+.corr-section{background:#fff;margin:6px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.corr-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;border-bottom:1px solid #e1e4e8;transition:background .15s}
+.corr-header:hover{background:#f6f8fa}
+.corr-header .corr-title{font-size:13px;font-weight:600;color:#24292e}
+.corr-header .corr-type{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;margin-left:8px}
+.corr-header .corr-type.pos{background:#d4edda;color:#155724}
+.corr-header .corr-type.neg{background:#f8d7da;color:#721c24}
+.corr-header .corr-status{font-size:11px;font-weight:500}
+.corr-header .corr-status.ok{color:#28a745}
+.corr-header .corr-status.div{color:#dc3545;font-weight:700}
+.corr-header .arrow{font-size:12px;color:#8b949e;transition:transform .2s}
+.corr-header.open .arrow{transform:rotate(90deg)}
+.corr-body{display:none;padding:0}
+.corr-body.open{display:block}
+.corr-chart{width:100%;height:200px}
+.corr-info{padding:8px 14px;font-size:11px;color:#586069;border-top:1px solid #f0f0f0}
+.corr-info .ci-r{display:flex;justify-content:space-between;padding:2px 0}
+.corr-info .ci-l{color:#8b499e}
+.corr-info .ci-v{font-weight:600}
 </style>
 </head>
 <body>
 <div class="header">
   <div style="display:flex;align-items:baseline">
     <h1>🌐 4013 全球半导体 · 趋势监控</h1>
-    <span class="sub">K线分段 × TRS组合 × 背离分析</span>
+    <span class="sub">K线分段 × DXY背离 × 资金行为 × 分析团队</span>
   </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <select id="dateFilter" style="padding:4px 8px;border:1px solid #d1d5da;border-radius:4px;font-size:12px">
+  <div class="header-right">
+    <select id="dateFilter" style="padding:3px 6px;border:1px solid #d1d5da;border-radius:4px;font-size:11px">
       <option value="all">全部日期</option>
     </select>
-    <button onclick="refreshAll()" style="padding:4px 12px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:12px">🔄</button>
-    <button onclick="fitFullRange()" style="padding:4px 12px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:12px">📐 全范围</button>
+    <button onclick="refreshAll()" style="padding:3px 10px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:11px">🔄</button>
+    <button onclick="fitFullRange()" style="padding:3px 10px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:11px">📐 全范围</button>
   </div>
 </div>
-
 <div class="tabs">
   <div class="tab active" onclick="switchTab(0)">📊 盘内转折<span class="badge" id="tab1Badge">-</span></div>
-  <div class="tab" onclick="switchTab(1)">🌏 中美盘外转折<span class="badge" id="tab2Badge">-</span></div>
-  <div class="tab" onclick="switchTab(2)">📈 全球趋势监控<span class="badge" id="tab3Badge">-</span></div>
+  <div class="tab" onclick="switchTab(1)">🌏 盘外背离<span class="badge" id="tab2Badge">-</span></div>
+  <div class="tab" onclick="switchTab(2)">📈 全球趋势<span class="badge" id="tab3Badge">-</span></div>
+  <div class="tab" onclick="switchTab(3)">📊 相关性背离<span class="badge" id="tab4Badge">-</span></div>
 </div>
-
+<div class="market-bar" id="marketBar"></div>
 <div class="legend" id="legend"></div>
-
 <div class="chart-wrap">
-  <div class="panel active" id="panel0"><div id="chart1"></div></div>
+  <div class="panel active" id="panel0"><div id="mktCards"></div></div>
   <div class="panel" id="panel1"><div id="chart2"></div></div>
   <div class="panel" id="panel2"><div id="chart3"></div></div>
+  <div class="ap intraday-panel" id="intradayPanel" style="display:none"></div>
+  <div class="ap offhours-panel" id="offhoursPanel" style="display:none"></div>
+  <div class="ap bond-panel" id="bondPanel" style="display:none"></div>
 </div>
-
+<div id="corrContainer" style="display:none"></div>
 <div class="popup" id="popup"></div>
-
 <script>
-const D='data';let charts={};let series={};let allD={};
-let currentTab=0;
+const D='data';let charts={};let series={};let allD={};let currentTab=0;
+const API4002='http://192.168.25.144:4002';
+const HKT_OFFSET=28800;
+const REFRESH_INTERVAL=60000;
 
-// Market config
-const MKT={segments_SSE980017:{c:'#28a745',n:'A股半导体'},segments_HK_HSCASEMI:{c:'#e83e8c',n:'港股半导体'},segments_NIKKEI:{c:'#0366d6',n:'日本日经'},segments_KOSPI:{c:'#db6d28',n:'韩国KOSPI'}};
-const FUT={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
+const MKT={
+  segments_SSE980017:{c:'#28a745',n:'A股半导体',market:'CN',symbol:'SZSE:980017'},
+  segments_HK_HSCASEMI:{c:'#e83e8c',n:'港股半导体',market:'HK',symbol:'HSI:HSCASEMI'},
+  segments_NIKKEI:{c:'#0366d6',n:'日本日经',market:'JP',symbol:'NIKKEI'},
+  segments_KOSPI:{c:'#db6d28',n:'韩国KOSPI',market:'KR',symbol:'KOSPI'}
+};
+
+const SESSIONS={
+  CN:{name:'A股',sessions:[[9,30,11,30],[13,0,15,0]],tz:8},
+  HK:{name:'港股',sessions:[[9,30,12,0],[13,0,16,0]],tz:8},
+  JP:{name:'日经',sessions:[[8,0,10,30],[11,30,14,0]],tz:9},
+  KR:{name:'KOSPI',sessions:[[8,0,14,30]],tz:9},
+  US:{name:'美股',sessions:[[21,30,24,0],[0,0,4,0]],tz:-4},
+  EU:{name:'欧股',sessions:[[15,0,19,30]],tz:2},
+};
+
+function getLocalTime(tz){const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;return new Date(utc+tz*3600000);}
+function getHKT(){return getLocalTime(8);}
+// UTC→HKT 转换所有时间戳
+function toHKT(ts){return ts+HKT_OFFSET;}
+function fromHKT(hkt){return hkt-HKT_OFFSET;}
+
+function isMarketOpen(mk){
+  const rule=SESSIONS[mk];if(!rule)return{open:false,status:'unknown'};
+  const local=getLocalTime(rule.tz);const h=local.getHours(),m=local.getMinutes();const hm=h*60+m;
+  for(const[sH,sM,eH,eM]of rule.sessions){
+    const start=sH*60+sM;let end=eH*60+eM;if(end<=start)end+=24*60;
+    let check=hm;if(hm<start&&end>24*60)check=hm+24*60;
+    if(check>=start&&check<end)return{open:true,status:'open',localTime:local};
+  }
+  for(const[sH,sM]of rule.sessions){const start=sH*60+sM;if(hm>=start-30&&hm<start)return{open:false,status:'pre',localTime:local};}
+  return{open:false,status:'closed',localTime:local};
+}
+function formatLocalTime(tz){const t=getLocalTime(tz);return t.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});}
+function updateMarketBar(){
+  const el=document.getElementById('marketBar');const now=getHKT();let h='';
+  const markets=[{key:'CN'},{key:'HK'},{key:'JP'},{key:'KR'},{key:'US'},{key:'EU'}];
+  for(const m of markets){
+    const rule=SESSIONS[m.key];const st=isMarketOpen(m.key);
+    const dotCls=st.open?'open':st.status==='pre'?'pre':'closed';
+    const statusTxt=st.open?'开盘':st.status==='pre'?'盘前':'休市';
+    const localTime=formatLocalTime(rule.tz);
+    h+=`<div class="mkt"><span class="dot ${dotCls}"></span><span>${rule.name}</span><span style="color:${st.open?'#28a745':'#8b949e'};font-size:10px">${statusTxt} ${localTime}</span></div>`;
+    if(m.key!=='EU')h+=`<span class="sep">|</span>`;
+  }
+  h+=`<span class="sep">|</span><div class="mkt"><span class="dot open"></span><span>SOXL/3</span><span style="color:#28a745;font-size:10px">24h</span></div>`;
+  h+=`<span class="clock">HKT ${now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}</span>`;
+  el.innerHTML=h;
+}
+
+// ========== Real-time K-line from 4002 (返回UTC时间戳) ==========
+async function fetchRTKlines(symbol, resolution, days){
+  const now=Math.floor(Date.now()/1000);
+  const frm=now-days*86400;
+  try{
+    const url=API4002+'/history?symbol='+encodeURIComponent(symbol)+'&resolution='+resolution+'&from='+frm+'&to='+now;
+    const r=await fetch(url);if(!r.ok)return null;
+    const d=await r.json();if(d.s!=='ok'||!d.t||!d.t.length)return null;
+    // 返回的t是UTC秒，不转换（在显示时转换）
+    return d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));
+  }catch(e){console.error('fetchRT',symbol,e);return null;}
+}
+
+// ========== 4002 分析API代理 ==========
+async function fetch4002(path){
+  try{const r=await fetch(API4002+path);if(!r.ok)return null;return await r.json();}catch(e){return null;}
+}
 
 // ========== Data Loading ==========
+function fetchWithTimeout(url, timeoutMs=5000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(), timeoutMs);
+  return fetch(url, {signal:controller.signal}).finally(()=>clearTimeout(timer));
+}
 async function loadAll(){
   const files=['soxl_baseline.json','segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
-  for(const f of files){
-    try{const r=await fetch(`${D}/${f}`);if(!r.ok)continue;allD[f.replace('.json','')]=await r.json();}
-    catch(e){console.error('Load',f,e);}
-  }
-  // Load futures for UI2
-  const futs=[{f:'CFDGOLD',k:'CFDGOLD'},{f:'USDX_FX',k:'USDX_FX'},{f:'BTC_SPOT',k:'BTC_SPOT'},{f:'CL',k:'CL'}];
-  for(const{f,k}of futs){
-    try{const r=await fetch(`${D}/futures_${f}.json`);if(r.ok)allD['f_'+k]=await r.json();}
-    catch(e){}
-  }
-  // Load bond-hedge data from 3422
-  try{
-    const r=await fetch('http://192.168.25.134:3422/api/hedge_trs?days=7');
-    if(r.ok)allD.bond_hedge=await r.json();
-  }catch(e){console.error('Load bond-hedge',e);}
+  for(const f of files){try{const r=await fetch(D+'/'+f);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
+  for(const f of['CFDGOLD','USDX_FX','BTC_SPOT','CL']){try{const r=await fetch(D+'/futures_'+f+'.json');if(r.ok)allD['f_'+f]=await r.json();}catch(e){}}
+  try{const r=await fetchWithTimeout('/api/bond-hedge',5000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){}
+  // 实时K线（并行，每个带超时）
+  const rtPromises=Object.entries(MKT).map(async([k,cfg])=>{
+    try{
+      const r=await fetchWithTimeout(API4002+'/history?symbol='+encodeURIComponent(cfg.symbol)+'&resolution=1&from='+(Math.floor(Date.now()/1000)-86400)+'&to='+Math.floor(Date.now()/1000), 8000);
+      if(r.ok){const d=await r.json();if(d.s==='ok'&&d.t&&d.t.length){allD['rt_'+k]=d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));console.log('RT OK:',cfg.n,allD['rt_'+k].length);}}
+    }catch(e){console.warn('RT FAIL:',cfg.n,e.message);}
+  });
+  await Promise.allSettled(rtPromises);
+  // 4002 分析数据（并行，带超时，不阻塞UI）
+  const analysisPromises=[
+    fetchWithTimeout(API4002+'/api/monitor/sectors?market=CN',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.sectors_cn=d;}).catch(()=>{}),
+    fetchWithTimeout(API4002+'/api/monitor/sectors?market=HK',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.sectors_hk=d;}).catch(()=>{}),
+    fetchWithTimeout(API4002+'/api/tracking/reversal',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.reversals=d;}).catch(()=>{}),
+    fetchWithTimeout(API4002+'/api/monitor/volume-surges',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.volume_surges=d;}).catch(()=>{}),
+    fetchWithTimeout(API4002+'/signal/sector-realtime',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.sector_realtime=d;}).catch(()=>{}),
+    fetchWithTimeout(API4002+'/api/correlation/all',5000).then(r=>r.ok?r.json():null).then(d=>{if(d)allD.correlation=d;}).catch(()=>{}),
+  ];
+  // 3402 放量数据（核心信号，通过server代理）
+  const surgePromises=[
+    fetchWithTimeout('/api/surge',10000).then(r=>r.ok?r.json():null).then(d=>{if(d){allD.surge_global=d.global||null;allD.surge_commodity=d.commodity||null;}}).catch(()=>{}),
+  ];
+  await Promise.allSettled([...analysisPromises,...surgePromises]);
 }
 
-// ========== Chart Building ==========
+// ========== Chart Helpers ==========
+// 兼容两种数据格式: UDF {t[],c[]} 和 数组 [{time,close}]
+function toKlines(d){
+  if(!d)return[];
+  // 数组格式 [{time,open,high,low,close,volume}] 或 [{time,close}]
+  if(Array.isArray(d))return d.map(k=>({time:toHKT(k.time),open:k.open||k.close,high:k.high||k.close,low:k.low||k.close,close:k.close,volume:k.volume||0}));
+  // UDF格式 {t[],o[],h[],l[],c[],v[]}
+  if(d.t&&d.c)return d.t.map((t,i)=>({time:toHKT(t),open:d.o?d.o[i]:d.c[i],high:d.h?d.h[i]:d.c[i],low:d.l?d.l[i]:d.c[i],close:d.c[i],volume:d.v?d.v[i]:0}));
+  return [];
+}
+// 统一归一化: 所有线基于soxlRef（SOXL第一个close）
+// 保证所有线在相同基准上可比
+let _soxlRef=null;
+function getSoxlRef(){
+  if(_soxlRef!==null)return _soxlRef;
+  const soxl=allD.soxl_baseline;
+  if(!soxl)return 1;
+  if(Array.isArray(soxl)&&soxl.length)_soxlRef=soxl[0].close;
+  else if(soxl.c&&soxl.c.length)_soxlRef=soxl.c[0];
+  return _soxlRef||1;
+}
 function normPct(klines){
-  if(!klines||!klines.length)return[];
-  const ref=klines[0].close;
-  return ref?klines.map(k=>({time:k.time,value:((k.close-ref)/ref)*100})):klines;
+  if(!klines)return[];
+  const ref=getSoxlRef();
+  let arr=[];
+  if(Array.isArray(klines))arr=klines.map(k=>({time:toHKT(k.time),close:k.close}));
+  else if(klines.t&&klines.c)arr=klines.t.map((t,i)=>({time:toHKT(t),close:klines.c[i]}));
+  if(!arr.length)return[];
+  return arr.map(k=>({time:k.time,value:((k.close-ref)/ref)*100}));
+}
+// 期货数据归一化: 同样基于soxlRef
+function normPctHKT(data){
+  if(!data||!data.length)return[];
+  const ref=getSoxlRef();
+  return data.map(d=>({time:toHKT(d.time),value:((d.close-ref)/ref)*100}));
 }
 
-function makeChart(containerId){
-  const c=document.getElementById(containerId);
-  c.innerHTML='';
+function makeChart(cid){
+  const c=document.getElementById(cid);c.innerHTML='';
   const ch=LightweightCharts.createChart(c,{
     width:c.clientWidth,height:c.clientHeight,
-    layout:{background:{type:'solid',color:'#fff'},textColor:'#586069',fontSize:11},
+    layout:{background:{type:'solid',color:'#fff'},textColor:'#586069',fontSize:10},
     grid:{vertLines:{color:'#f0f0f0'},horzLines:{color:'#f0f0f0'}},
-    crosshair:{mode:LightweightCharts.CrosshairMode.Normal,
-      vertLine:{color:'#586069',width:1,style:0},
-      horzLine:{color:'#586069',width:1,style:0,labelBackgroundColor:'#24292e'}},
-    rightPriceScale:{borderColor:'#e1e4e8',scaleMargins:{top:.15,bottom:.15}},
+    crosshair:{mode:LightweightCharts.CrosshairMode.Normal,vertLine:{color:'#586069',width:1,style:0},horzLine:{color:'#586069',width:1,style:0,labelBackgroundColor:'#24292e'}},
+    rightPriceScale:{borderColor:'#e1e4e8',scaleMargins:{top:.2,bottom:.2},visible:true,format:'percent'},
     timeScale:{borderColor:'#e1e4e8',timeVisible:true,secondsVisible:false}
   });
-  const ro=new ResizeObserver(()=>ch.applyOptions({width:c.clientWidth,height:c.clientHeight}));
-  ro.observe(c);
+  new ResizeObserver(()=>ch.applyOptions({width:c.clientWidth,height:c.clientHeight})).observe(c);
   return ch;
 }
-
 function addLine(ch,color,lw,title,dash){
-  return ch.addLineSeries({color,lineWidth:lw||2,crosshairMarkerVisible:true,
-    priceLineVisible:false,lastValueVisible:true,title,
-    priceFormat:{type:'percent',precision:2,minMove:0.01},
-    lineStyle:dash?2:0});
+  return ch.addLineSeries({color,lineWidth:lw||2,crosshairMarkerVisible:true,priceLineVisible:false,lastValueVisible:false,title,
+    priceFormat:{type:'custom',formatter:v=>v.toFixed(2)+'%'},lineStyle:dash?2:0});
+}
+
+// ========== DXY Divergence ==========
+function computeDXYDivergence(){
+  const dxy=normPctHKT(allD.f_USDX_FX);if(!dxy.length)return[];
+  const pairs=[
+    {name:'DXY×黄金',data:normPctHKT(allD.f_CFDGOLD),expected:'inverse'},
+    {name:'DXY×BTC',data:normPctHKT(allD.f_BTC_SPOT),expected:'positive'},
+    {name:'DXY×原油',data:normPctHKT(allD.f_CL),expected:'inverse'},
+  ];
+  const results=[];
+  for(const pair of pairs){
+    if(!pair.data.length)continue;
+    const dxyMap=new Map(dxy.map(d=>[d.time,d.value]));
+    const pairMap=new Map(pair.data.map(d=>[d.time,d.value]));
+    const common=[...dxyMap.keys()].filter(t=>pairMap.has(t)).sort((a,b)=>a-b);
+    if(common.length<2)continue;
+    const w=Math.min(20,common.length);const recent=common.slice(-w);
+    const dxyV=recent.map(t=>dxyMap.get(t));const pairV=recent.map(t=>pairMap.get(t));
+    const n=recent.length;const mx=dxyV.reduce((a,b)=>a+b,0)/n;const my=pairV.reduce((a,b)=>a+b,0)/n;
+    let num=0,dx=0,dy=0;for(let i=0;i<n;i++){num+=(dxyV[i]-mx)*(pairV[i]-my);dx+=(dxyV[i]-mx)**2;dy+=(pairV[i]-my)**2;}
+    const corr=dx&&dy?num/Math.sqrt(dx*dy):0;
+    const dxyDir=dxyV[n-1]-dxyV[0]||0;const pairDir=pairV[n-1]-pairV[0]||0;
+    const isDiv=(dxyDir>0&&pairDir>0)||(dxyDir<0&&pairDir<0);
+    results.push({name:pair.name,corr:corr.toFixed(3),dxyDir:dxyDir>0?'↑':dxyDir<0?'↓':'→',pairDir:pairDir>0?'↑':pairDir<0?'↓':'→',isDiv});
+  }
+  return results;
+}
+
+// ========== 转折检测（3条件） ==========
+function detectReversals(){
+  const results=[];
+  for(const[k,data]of Object.entries(allD)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    const cfg=MKT[k];if(!cfg)continue;
+    for(const seg of data.segments){
+      const segStart=seg.startTime||seg.start_time;
+      const segEnd=seg.endTime||seg.end_time;
+      if(!segStart||!segEnd)continue;
+      // 条件1: 涨跌幅度 > 1%
+      const pct=seg.pctChange||seg.pct||0;
+      const condition1=Math.abs(pct)>=1.0;
+      // 条件2: 与SOXL方向相反(背离)
+      const condition2=!!seg.divergence;
+      // 条件3: 成交量放大
+      const condition3=seg.volumeSurge||seg.surge||false;
+      const score=(condition1?1:0)+(condition2?1:0)+(condition3?1:0);
+      if(score>=2){
+        const t1=new Date(toHKT(segStart)*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        const t2=new Date(toHKT(segEnd)*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+        results.push({market:cfg.n,color:cfg.c,segId:seg.id,time:`${t1}-${t2}`,pct,condition1,condition2,condition3,score});
+      }
+    }
+  }
+  results.sort((a,b)=>b.score-a.score||Math.abs(b.pct)-Math.abs(a.pct));
+  return results;
 }
 
 // ========== Divergence Overlay ==========
-function findNearestSoxlTime(soxlData, targetTime){
-  // Binary search for nearest SOXL timestamp
-  let lo=0,hi=soxlData.length-1;
-  while(lo<hi){
-    const mid=(lo+hi)>>1;
-    if(soxlData[mid].time<targetTime)lo=mid+1;else hi=mid;
-  }
-  if(lo>0){
-    const d1=Math.abs(soxlData[lo].time-targetTime);
-    const d0=Math.abs(soxlData[lo-1].time-targetTime);
-    return d0<d1?lo-1:lo;
-  }
-  return 0;
+// 生成唯一canvas ID（每个chart独立）
+let _canvasUid=0;
+function getOrCreateOverlay(container,uid,suffix){
+  const id='ov_'+uid+'_'+suffix;
+  let ov=document.getElementById(id);
+  if(!ov){ov=document.createElement('canvas');ov.id=id;ov.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5';container.style.position='relative';container.appendChild(ov);}
+  return ov;
 }
-
-function drawDivergenceOverlay(ch,seriesMap,allData){
+function drawDivergenceOverlay(ch,seriesMap,allData,uid){
   const container=ch.chartElement();
-  let overlay=document.getElementById('divOverlay');
-  if(!overlay){
-    overlay=document.createElement('canvas');
-    overlay.id='divOverlay';
-    overlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5';
-    container.style.position='relative';
-    container.appendChild(overlay);
-  }
-  const ctx=overlay.getContext('2d');
-  const W=container.clientWidth, H=container.clientHeight;
-  overlay.width=W; overlay.height=H;
-  ctx.clearRect(0,0,W,H);
+  const ov=getOrCreateOverlay(container,uid,'div');
+  const ctx=ov.getContext('2d');const W=container.clientWidth,H=container.clientHeight;ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
 
-  const colors=['rgba(255,193,7,0.45)','rgba(255,107,107,0.45)','rgba(70,130,220,0.45)'];
+  const soxl=allData.soxl_baseline;if(!soxl)return;
+  // 兼容数组格式 [{time,close}] 和UDF格式 {t[],c[]}
+  let soxlRef,soxlPctMap=new Map();
+  if(Array.isArray(soxl)&&soxl.length){
+    soxlRef=soxl[0].close;
+    for(const d of soxl)soxlPctMap.set(toHKT(d.time),((d.close-soxlRef)/soxlRef)*100);
+  }else if(soxl.t&&soxl.c&&soxl.c.length){
+    soxlRef=soxl.c[0];
+    for(let i=0;i<soxl.t.length;i++)soxlPctMap.set(toHKT(soxl.t[i]),((soxl.c[i]-soxlRef)/soxlRef)*100);
+  }else return;
+
   let ci=0;
-
   for(const[k,data]of Object.entries(allData)){
     if(!k.startsWith('segments_')||!data.segments)continue;
-    const mktSeries=seriesMap[k];
-    if(!mktSeries)continue;
-    const soxlSeries=seriesMap.soxl;
-    if(!soxlSeries)continue;
-    const col=colors[ci%colors.length]; ci++;
+    const mktSeries=seriesMap[k];if(!mktSeries)continue;
+    const soxlSeries=seriesMap.soxl;if(!soxlSeries)continue;
 
-    const soxl=allData.soxl_baseline;
-    const soxlRef=soxl[0].close;
-    const mktRef=data.klines[0].close;
+    let mktBars=[];
+    const rtKey='rtPct_'+k;
+    if(allData[rtKey]&&allData[rtKey].length)mktBars=allData[rtKey];
+    else if(data.t&&data.c&&data.t.length){const ref=data.c[0];mktBars=data.t.map((t,i)=>({time:toHKT(t),pct:((data.c[i]-ref)/ref)*100}));}
+    else if(Array.isArray(data)&&data.length){const ref=data[0].close;mktBars=data.map(d=>({time:toHKT(d.time),pct:((d.close-ref)/ref)*100}));}
+    if(!mktBars.length)continue;
+    const mktPctMap=new Map(mktBars.map(b=>[b.time,b.pct]));
+
+    const segColors=['rgba(255,193,7,0.25)','rgba(255,107,107,0.25)','rgba(70,130,220,0.25)','rgba(232,62,140,0.25)'];
+    const strokeColors=['rgba(255,150,0,0.5)','rgba(255,80,80,0.5)','rgba(50,110,200,0.5)','rgba(200,50,120,0.5)'];
 
     for(const seg of data.segments){
-      if(!seg.divergence)continue;
-      const segKlines=data.klines.filter(kk=>kk.time>=seg.start_time&&kk.time<=seg.end_time);
-      if(segKlines.length<2)continue;
+      const segStart=toHKT(seg.startTime||seg.start_time);
+      const segEnd=toHKT(seg.endTime||seg.end_time);
+      if(!segStart||!segEnd)continue;
+      const segMktBars=mktBars.filter(b=>b.time>=segStart&&b.time<=segEnd);
+      if(segMktBars.length<2)continue;
 
-      ctx.fillStyle=col;
-      ctx.beginPath();
-      let started=false;
-      // Top edge: market line (use nearest SOXL time for coordinate)
-      for(const sk of segKlines){
-        const si=findNearestSoxlTime(soxl,sk.time);
-        const soxlTime=soxl[si].time;
-        const x=ch.timeScale().timeToCoordinate(soxlTime);
-        const mktPct=((sk.close-mktRef)/mktRef)*100;
-        const y=mktSeries.priceToCoordinate(mktPct);
-        if(x===null||y===null||x<0)continue;
-        if(!started){ctx.moveTo(x,y);started=true;}else{ctx.lineTo(x,y);}
+      const mktStart=segMktBars[0].pct;const mktEnd=segMktBars[segMktBars.length-1].pct;
+      const mktDir=mktEnd-mktStart;
+      let soxlStartPct=null,soxlEndPct=null;
+      for(const[st,sp]of soxlPctMap){if(st>=segStart&&soxlStartPct===null)soxlStartPct=sp;if(st<=segEnd)soxlEndPct=sp;}
+      if(soxlStartPct===null||soxlEndPct===null)continue;
+      const soxlDir=soxlEndPct-soxlStartPct;
+      const isDiv=Math.abs(mktDir)>0.05&&Math.abs(soxlDir)>0.05&&((mktDir>0&&soxlDir<0)||(mktDir<0&&soxlDir>0));
+      const ci2=ci%segColors.length;
+
+      ctx.fillStyle=isDiv?segColors[ci2]:'rgba(100,150,200,0.06)';
+      ctx.strokeStyle=isDiv?strokeColors[ci2]:'rgba(100,150,200,0.15)';
+      ctx.lineWidth=0.5;ctx.beginPath();let started=false;
+      for(const b of segMktBars){const x=ch.timeScale().timeToCoordinate(b.time);const y=mktSeries.priceToCoordinate(b.pct);if(x===null||y===null)continue;if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}
+      for(let i=segMktBars.length-1;i>=0;i--){const b=segMktBars[i];const sp=soxlPctMap.get(b.time);if(sp===undefined)continue;const x=ch.timeScale().timeToCoordinate(b.time);const y=soxlSeries.priceToCoordinate(sp);if(x===null||y===null)continue;ctx.lineTo(x,y);}
+      ctx.closePath();ctx.fill();ctx.stroke();
+
+      // 段ID标注
+      if(seg.id&&segMktBars.length>0){
+        const midBar=segMktBars[Math.floor(segMktBars.length/2)];
+        const x=ch.timeScale().timeToCoordinate(midBar.time);
+        const yTop=mktSeries.priceToCoordinate(Math.max(mktStart,mktEnd));
+        if(x!==null&&yTop!==null&&yTop>15&&yTop<H-15){
+          const label=seg.id+(isDiv?' ⚠️':'');
+          ctx.font='bold 8px monospace';const tw=ctx.measureText(label).width;
+          ctx.fillStyle=isDiv?'rgba(255,150,0,0.15)':'rgba(100,150,200,0.08)';
+          ctx.strokeStyle=isDiv?'rgba(255,150,0,0.6)':'rgba(100,150,200,0.3)';
+          ctx.lineWidth=0.5;ctx.beginPath();ctx.roundRect(x-tw/2-3,yTop-13,tw+6,13,2);ctx.fill();ctx.stroke();
+          ctx.fillStyle=isDiv?'#e67e22':'#666';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,x,yTop-6);
+        }
       }
-      // Bottom edge: SOXL line (reverse)
-      for(let i=segKlines.length-1;i>=0;i--){
-        const sk=segKlines[i];
-        const si=findNearestSoxlTime(soxl,sk.time);
-        const soxlPt=soxl[si];
-        const x=ch.timeScale().timeToCoordinate(soxlPt.time);
-        if(x===null||x<0)continue;
-        const sv=((soxlPt.close-soxlRef)/soxlRef)*100;
-        const y=soxlSeries.priceToCoordinate(sv);
-        if(y===null)continue;
-        ctx.lineTo(x,y);
-      }
-      ctx.closePath(); ctx.fill();
+    }
+    ci++;
+  }
+}
+
+// ========== Segment Labels ==========
+function drawSegmentLabels(ch,seriesMap,allData,uid){
+  const container=ch.chartElement();
+  const ov=getOrCreateOverlay(container,uid,'seg');
+  const ctx=ov.getContext('2d');const W=container.clientWidth,H=container.clientHeight;ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
+  const colors={segments_SSE980017:'#28a745',segments_HK_HSCASEMI:'#e83e8c',segments_NIKKEI:'#0366d6',segments_KOSPI:'#db6d28'};
+  for(const[k,data]of Object.entries(allData)){
+    if(!k.startsWith('segments_')||!data.segments)continue;const s=seriesMap[k];if(!s)continue;const col=colors[k]||'#666';
+    for(const seg of data.segments){
+      const midTime=toHKT(Math.floor(((seg.startTime||seg.start_time)+(seg.endTime||seg.end_time))/2));
+      const x=ch.timeScale().timeToCoordinate(midTime);if(x===null||x<0||x>W)continue;
+      const segBars=[];
+      if(data.t&&data.c){for(let i=0;i<data.t.length;i++){if(data.t[i]>=(seg.startTime||seg.start_time)&&data.t[i]<=(seg.endTime||seg.end_time))segBars.push(data.c[i]);}}
+      else if(Array.isArray(data)){for(const d of data){if(d.time>=(seg.startTime||seg.start_time)&&d.time<=(seg.endTime||seg.end_time))segBars.push(d.close);}}
+      if(!segBars.length)continue;
+      const midPrice=segBars[Math.floor(segBars.length/2)];const refPrice=data.o?data.o[0]:segBars[0];
+      const midPct=((midPrice-refPrice)/refPrice)*100;const y=s.priceToCoordinate(midPct);
+      if(y===null||y<10||y>H-10)continue;
+      const label=seg.id;ctx.font='bold 8px monospace';const tw=ctx.measureText(label).width;
+      ctx.fillStyle=col+'22';ctx.strokeStyle=col;ctx.lineWidth=0.5;ctx.beginPath();ctx.roundRect(x-tw/2-3,y-7,tw+6,12,2);ctx.fill();ctx.stroke();
+      ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,x,y);
     }
   }
 }
 
-// ========== UI1: 盘内转折 ==========
-function buildUI1(){
-  const ch=makeChart('chart1');
-  charts.ui1=ch;
-  series.ui1={};
+// ========== 盘内分析面板（含K线段统计播报 + 3406转折检测） ==========
+function toggleAP(el){el.closest('.ap').classList.toggle('open');}
+function renderIntradayPanel(){
+  const panel=document.getElementById('intradayPanel');
+  const openMkts=Object.keys(SESSIONS).filter(k=>isMarketOpen(k).open);
+  const reversals=detectReversals();
+  panel.style.display='block';
+  let h=`<div class="ap-t" onclick="toggleAP(this)">📊 盘内分析 — K线段统计 & 转折检测</div><div class="ap-body">`;
 
-  // SOXL baseline (dashed gray)
-  if(allD.soxl_baseline){
-    const s=addLine(ch,'#959da5',1,'SOXL/3 24h',true);
-    s.setData(normPct(allD.soxl_baseline));
-    series.ui1.soxl=s;
-  }
-
-  for(const[k,cfg]of Object.entries(MKT)){
-    if(allD[k]){
-      const ls=addLine(ch,cfg.c,2,cfg.n);
-      ls.setData(normPct(allD[k]));
-      series.ui1[k]=ls;
-    }
-  }
-
-  // Divergence zones + segment ID labels
-  if(allD.soxl_baseline){
-    const soxl=allD.soxl_baseline;
-    const redraw=()=>{
-      drawDivergenceOverlay(ch,series.ui1,allD);
-      drawSegmentLabels(ch,series.ui1,allD);
-    };
-    setTimeout(()=>{
-      ch.timeScale().setVisibleLogicalRange({from:0,to:soxl.length-1});
-      setTimeout(redraw,200);
-    },600);
-    ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw,80));
-    new ResizeObserver(()=>{setTimeout(redraw,150);}).observe(ch.chartElement());
-  }
-
-  // Hover popup
-  ch.subscribeCrosshairMove(p=>{
-    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
-    showPopup(p,'ui1');
-  });
-
-  updateLegendUI1();
-}
-
-function showPopup(param,ui){
-  const popup=document.getElementById('popup');
-  // Find segment at this time
-  let found=null,foundKey='';
+  // === 段统计播报 ===
+  h+=`<div class="ap-s"><div class="ap-st">📋 K线段统计（延迟数据）</div>`;
   for(const[k,data]of Object.entries(allD)){
     if(!k.startsWith('segments_')||!data.segments)continue;
-    for(const seg of data.segments){
-      if(seg.start_time<=param.time&&seg.end_time>=param.time){
-        found=seg;foundKey=k;break;
+    const cfg=MKT[k];if(!cfg)continue;
+    const segs=data.segments;
+    const lastSeg=segs[segs.length-1];
+    const divSegs=segs.filter(s=>s.divergence);
+    const rtK=allD['rt_'+k];
+    const lastTime=rtK&&rtK.length?new Date(toHKT(rtK[rtK.length-1].time)*1000).toLocaleTimeString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',hour12:false}):'-';
+    const barCount=rtK?rtK.length:0;
+    h+=`<div class="ap-r"><span class="ap-l" style="color:${cfg.c};font-weight:600">${cfg.n}</span><span class="ap-v">${segs.length}段 ${divSegs.length?'⚠️'+divSegs.length+'背离':''}</span></div>`;
+    h+=`<div class="ap-r"><span class="ap-l">  最新段 ${lastSeg?lastSeg.id:'-'}</span><span class="ap-v ${lastSeg?(lastSeg.pctChange||lastSeg.pct||0)>0?'up':'down':'neutral'}">${lastSeg?((lastSeg.pctChange||lastSeg.pct||0)>0?'+':'')+(lastSeg.pctChange||lastSeg.pct||0).toFixed(2)+'%':'-'}</span></div>`;
+    h+=`<div class="ap-r"><span class="ap-l">  实时Bar</span><span class="ap-v neutral">${barCount}根 最新${lastTime}</span></div>`;
+  }
+  h+=`</div>`;
+
+  // === 3406盘内板块转折/背离检测（3条件） ===
+  h+=`<div class="ap-s"><div class="ap-st">🔍 转折检测（3条件: 涨跌>1% + 背离 + 放量）</div>`;
+  if(reversals.length){
+    for(const r of reversals.slice(0,8)){
+      const tags=[];
+      if(r.condition1)tags.push('<span class="ap-tag surge">涨跌</span>');
+      if(r.condition2)tags.push('<span class="ap-tag div">背离</span>');
+      if(r.condition3)tags.push('<span class="ap-tag burst">放量</span>');
+      h+=`<div class="ap-r"><span class="ap-l" style="color:${r.color}">${r.market} ${r.segId}</span><span class="ap-v ${r.pct>0?'up':'down'}">${r.pct>0?'+':''}${r.pct.toFixed(2)}%</span></div>`;
+      h+=`<div class="ap-r"><span class="ap-l">  ${r.time}</span><span class="ap-v">${tags.join(' ')}</span></div>`;
+    }
+  }else{
+    h+=`<div class="ap-r"><span class="ap-l">当前无符合条件的转折</span></div>`;
+  }
+  h+=`</div>`;
+
+  // === 开盘市场实时状态 ===
+  if(openMkts.length){
+    h+=`<div class="ap-s"><div class="ap-st">🟢 开盘市场实时</div>`;
+    for(const mk of openMkts){
+      const rule=SESSIONS[mk];const st=isMarketOpen(mk);
+      const localTime=st.localTime?st.localTime.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}):'';
+      const segKey=Object.keys(MKT).find(k=>MKT[k].market===mk);
+      const rtData=segKey?allD['rt_'+segKey]:null;
+      if(rtData&&rtData.length>=5){
+        const last5=rtData.slice(-5);
+        const trend=last5[4].close>last5[0].close?'up':'down';
+        const chg=((last5[4].close-last5[0].close)/last5[0].close*100);
+        const vol=last5[4].volume;
+        const avgVol=rtData.slice(-30).reduce((s,k)=>s+k.volume,0)/Math.min(30,rtData.length);
+        const volRatio=avgVol>0?(vol/avgVol):0;
+        const volTag=volRatio>=3?'burst':volRatio>=1.5?'surge':'normal';
+        const volTxt=volRatio>=3?'🔴爆发':volRatio>=1.5?'🟡放量':'🟢正常';
+        h+=`<div class="ap-r"><span class="ap-l" style="color:${MKT[segKey]?.c||'#333'};font-weight:600">${rule.name} ${localTime}</span><span class="ap-v ${trend}">${trend==='up'?'📈':'📉'} ${chg>0?'+':''}${chg.toFixed(2)}%</span></div>`;
+        h+=`<div class="ap-r"><span class="ap-l">  成交量</span><span class="ap-v"><span class="ap-tag ${volTag}">${volTxt} ${volRatio.toFixed(1)}x</span></span></div>`;
+        h+=`<div class="ap-r"><span class="ap-l">  最新价</span><span class="ap-v neutral">${last5[4].close.toFixed(2)}</span></div>`;
       }
     }
-    if(found)break;
+    h+=`</div>`;
   }
-  if(!found){popup.style.display='none';return;}
-
-  const data=allD[foundKey];
-  const dt1=new Date(found.start_time*1000).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
-  const dt2=new Date(found.end_time*1000).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
-  const typeL=found.type==='trend_up'?'📈 上升':found.type==='trend_down'?'📉 下降':'➡️ 震荡';
-  const soxlL=found.soxl_trend==='trend_up'?'📈 上升':found.soxl_trend==='trend_down'?'📉 下降':'➡️ 震荡';
-  const trsL=found.trs_combination==='bull_all'?'🟢 全多':found.trs_combination==='bear_all'?'🔴 全空':'⚡ 一多一空';
-  const trsCls=found.trs_combination==='bull_all'?'bull':found.trs_combination==='bear_all'?'bear':'mix';
-  const divCls=found.divergence?'div':'ok';
-  const volCls=found.volume_surge?'surge':'normal';
-
-  popup.innerHTML=`
-    <div class="t">${data.name} · ${found.id}</div>
-    <div class="r"><span class="l">时段</span><span class="v">${dt1} → ${dt2}</span></div>
-    <div class="r"><span class="l">市场</span><span class="v ${found.type==='trend_up'?'up':found.type==='trend_down'?'down':'rg'}">${typeL} (${found.pct>0?'+':''}${found.pct.toFixed(2)}%)</span></div>
-    <div class="r"><span class="l">SOXL/3</span><span class="v ${found.soxl_trend==='trend_up'?'up':found.soxl_trend==='trend_down'?'down':'rg'}">${soxlL}</span></div>
-    <div class="r"><span class="l">K线数</span><span class="v">${found.bars}</span></div>
-    <div class="r"><span class="l">波幅</span><span class="v">${((found.high-found.low)/found.start_close*100).toFixed(2)}%</span></div>
-    <div style="margin-top:4px">
-      <span class="trs-badge ${trsCls}">${trsL}</span>
-      <span class="div-badge ${divCls}">${found.divergence?'⚠️ 背离':'✅ 同向'}</span>
-      <span class="vol-badge ${volCls}">${found.volume_surge?'📊 放量':'📉 常量'}</span>
-    </div>
-    ${found.futures_trends?`<div class="log">期货: ${Object.entries(found.futures_trends).map(([s,t])=>`${s}=${t==='trend_up'?'↑':t==='trend_down'?'↓':'→'}`).join(' ')}</div>`:''}
-  `;
-
-  const rect=document.querySelector('.chart-wrap').getBoundingClientRect();
-  let left=rect.left+(param.point?.x||0)+15;
-  let top=rect.top+(param.point?.y||0)-10;
-  if(left+340>window.innerWidth)left=rect.left+(param.point?.x||0)-350;
-  if(top+200>window.innerHeight)top=rect.top+(param.point?.y||0)-200;
-  popup.style.left=left+'px';popup.style.top=top+'px';popup.style.display='block';
+  panel.innerHTML=h+'</div>';
 }
 
-// ========== UI2: 中美盘外转折 ==========
-function buildUI2(){
-  const ch=makeChart('chart2');
-  charts.ui2=ch;
-  series.ui2={};
+// ========== 盘外分析面板（DXY背离 + 期货敞口） ==========
+function renderOffhoursPanel(){
+  const panel=document.getElementById('offhoursPanel');
+  const closedMkts=Object.keys(SESSIONS).filter(k=>!isMarketOpen(k).open);
+  const divs=computeDXYDivergence();
+  panel.style.display='block';
+  let h=`<div class="ap-t" onclick="toggleAP(this)">🌏 盘外分析 — 场外转折 & DXY背离</div><div class="ap-body">`;
 
-  // SOXL
-  if(allD.soxl_baseline){
-    const s=addLine(ch,'#959da5',1,'SOXL/3',true);
-    s.setData(normPct(allD.soxl_baseline));
-    series.ui2.soxl=s;
+  // === 放量源（核心信号）===
+  const hasSurgeData=(allD.surge_global&&!allD.surge_global.error)||(allD.surge_commodity&&!allD.surge_commodity.error);
+  if(hasSurgeData){
+    h+=`<div class="ap-s"><div class="ap-st">🔥 放量源 — 核心信号</div>`;
+    // 全球放量
+    if(allD.surge_global&&!allD.surge_global.error){
+      const markets=allD.surge_global.markets||{};
+      for(const[mk,mkData]of Object.entries(markets)){
+        const top5=(mkData.top10||[]).slice(0,5);
+        if(!top5.length)continue;
+        h+=`<div class="ap-r"><span class="ap-l" style="font-weight:600;color:#e65100">${mk.toUpperCase()}</span><span class="ap-v up" style="font-size:9px">${mkData.elapsed_min||0}min</span></div>`;
+        for(const s of top5){
+          const name=s.name||s.symbol||'-';
+          const ratio=s.vol_ratio||s.ratio||0;
+          h+=`<div class="ap-r"><span class="ap-l">  ${name}</span><span class="ap-v up" style="color:#e65100">🔥 ${typeof ratio==='number'?ratio.toFixed(1):ratio}x</span></div>`;
+        }
+      }
+    }
+    // 期货放量
+    if(allD.surge_commodity){
+      const regions=['cn','eu','us'];
+      for(const region of regions){
+        const rd=allD.surge_commodity[region];
+        if(!rd||!rd.symbols)continue;
+        const syms=Object.values(rd.symbols).filter(s=>s.alerts&&s.alerts.length>0).slice(0,5);
+        if(!syms.length)continue;
+        const label=rd.label||region.toUpperCase();
+        h+=`<div class="ap-r"><span class="ap-l" style="font-weight:600;color:#e65100">${label}</span><span class="ap-v up" style="font-size:9px">放量${rd.surge_count||0} 缩量${rd.shrink_count||0}</span></div>`;
+        for(const s of syms){
+          const name=s.symbol||'-';
+          const rate=s.peak_rate||0;
+          const trend=s.trend||s.direction||'';
+          const alerts=(s.alerts||[]).filter(a=>a.level==='critical');
+          const alertTxt=alerts.length?alerts[0].message:'';
+          h+=`<div class="ap-r"><span class="ap-l">  ${name}</span><span class="ap-v up" style="color:#e65100">🔥 ${rate.toFixed(1)}x <span style="font-size:8px;color:#888">${trend} ${alertTxt}</span></span></div>`;
+        }
+      }
+    }
+    h+=`</div>`;
   }
 
-  // Futures
-  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
-  for(const[k,cfg]of Object.entries(futs)){
-    if(allD[k]){
-      const s=addLine(ch,cfg.c,1.5,cfg.n);
-      s.setData(normPct(allD[k]));
-      series.ui2[k]=s;
+  // === 非开盘市场期货敞口 ===
+  h+=`<div class="ap-s"><div class="ap-st">🔄 非开盘市场 × 期货敞口</div>`;
+  const futures=[
+    {key:'f_CFDGOLD',name:'黄金',color:'#FFD700'},
+    {key:'f_USDX_FX',name:'DXY',color:'#007bff'},
+    {key:'f_BTC_SPOT',name:'BTC',color:'#F7931A'},
+    {key:'f_CL',name:'原油',color:'#28a745'},
+  ];
+  for(const mk of closedMkts){
+    const rule=SESSIONS[mk];
+    let extraNote='';
+    if(mk==='CN'){
+      const now=getHKT();const hh=now.getHours(),mm=now.getMinutes();const hm=hh*60+mm;
+      if(hm>=21*60||hm<2*60+30)extraNote=' <span style="color:#28a745;font-size:9px">期货开盘中</span>';
+      else if(hm>=2*60+30&&hm<9*60+30)extraNote=' <span style="color:#8b949e;font-size:9px">期货盘前</span>';
+    }
+    h+=`<div class="ap-r"><span class="ap-l" style="font-weight:600">${rule.name}</span><span class="ap-v"><span class="ap-tag relay">期货接力中</span>${extraNote}</span></div>`;
+    // 检查该市场对应的期货相关性
+    for(const f of futures){
+      const fData=normPctHKT(allD[f.key]);
+      if(fData.length>=5){
+        const last5=fData.slice(-5);
+        const dir=last5[4].value-last5[0].value;
+        h+=`<div class="ap-r"><span class="ap-l">  ×${f.name}</span><span class="ap-v ${dir>0?'up':dir<0?'down':'neutral'}" style="color:${f.color}">${dir>0?'📈':dir<0?'📉':'➡️'} ${dir>0?'+':''}${dir.toFixed(2)}%</span></div>`;
+      }
     }
   }
+  h+=`</div>`;
 
-  // HK semiconductor (from segments if available)
-  // Use KSTR from stock_swap_klines or fallback
+  // === DXY相关性分析 ===
+  h+=`<div class="ap-s"><div class="ap-st">🔍 DXY相关性 × 背离分析</div>`;
+  for(const d of divs){
+    const cls=d.isDiv?'div':Math.abs(parseFloat(d.corr))>0.7?'sync':'inv';
+    const txt=d.isDiv?'⚠️ 背离':Math.abs(parseFloat(d.corr))>0.7?'✅ 同步':'↗️ 弱相关';
+    h+=`<div class="ap-r"><span class="ap-l">${d.name}</span><span class="ap-v"><span class="ap-tag ${cls}">${txt} r=${d.corr}</span></span></div>`;
+    h+=`<div class="ap-r" style="padding-left:8px"><span class="ap-l">DXY ${d.dxyDir}</span><span class="ap-l">${d.name.split('×')[1]} ${d.pairDir}</span></div>`;
+  }
+  h+=`</div>`;
 
-  ch.subscribeCrosshairMove(p=>{
-    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
-    showPopup(p,'ui2');
-  });
-  updateLegendUI2();
+  // === 4002 板块实时（如果有） ===
+  if(allD.sector_realtime&&Array.isArray(allD.sector_realtime)&&allD.sector_realtime.length){
+    h+=`<div class="ap-s"><div class="ap-st">📊 4002 板块实时信号</div>`;
+    const top5=allD.sector_realtime.slice(0,5);
+    for(const s of top5){
+      const name=s.name||s.sector||s.symbol||'-';
+      const chg=s.change||s.pct||s.pctChange||0;
+      const vol=s.volRatio||s.volume_ratio||0;
+      h+=`<div class="ap-r"><span class="ap-l">${name}</span><span class="ap-v ${chg>0?'up':chg<0?'down':'neutral'}">${chg>0?'+':''}${typeof chg==='number'?chg.toFixed(2):chg}%</span></div>`;
+    }
+    h+=`</div>`;
+  }
+
+  panel.innerHTML=h+'</div>';
 }
 
-// ========== Segment ID Labels Overlay ==========
-function drawSegmentLabels(ch, seriesMap, allData){
+// ========== Bond-Hedge Panel ==========
+function renderBondPanel(){
+  const panel=document.getElementById('bondPanel');
+  if(!allD.bond_hedge){panel.style.display='none';return;}
+  panel.style.display='block';
+  const bh=allD.bond_hedge;
+  let h=`<div class="ap-t" onclick="toggleAP(this)">💰 债券-汇率资金行为</div><div class="ap-body"><div style="display:flex;gap:12px;flex-wrap:wrap">`;
+  const bondNames={CN_BOND:'中国国债',US_BOND:'美债',JP_BOND:'日债',EURO_BOND:'欧债'};
+  const bondColors={CN_BOND:'#dc3545',US_BOND:'#0366d6',JP_BOND:'#28a745',EURO_BOND:'#6f42c1'};
+  if(bh.markers&&Array.isArray(bh.markers)){
+    const latest={};for(const m of bh.markers){if(!latest[m.bond]||m.ts>latest[m.bond].ts)latest[m.bond]=m;}
+    for(const[bondKey,label]of Object.entries(bondNames)){
+      const m=latest[bondKey];if(!m)continue;
+      const actionCls=m.action==='敞開'?'up':m.action==='對沖'?'down':'neutral';
+      const actionTxt=m.action==='敞開'?'📈 敞开':m.action==='對沖'?'📉 对冲':'➡️ 观望';
+      h+=`<div style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${bondColors[bondKey]}"></span><span style="color:#586069;font-size:10px">${label}</span><span class="ap-v ${actionCls}" style="font-size:10px">${actionTxt}</span></div>`;
+    }
+    h+=`<div style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#007bff"></span><span style="color:#586069;font-size:10px">DXY</span><span class="ap-v ok" style="font-size:10px">📊 正常</span></div>`;
+  }
+  h+=`</div>`;
+  panel.innerHTML=h+'</div></div>';
+}
+
+// ========== Pairwise Divergence Overlay ==========
+// 基于RT数据计算市场间背离（在重叠交易时间内检测方向相反）
+function drawPairwiseDivergence(ch,seriesMap,allData,uid){
   const container=ch.chartElement();
-  let overlay=document.getElementById('segLabelOverlay');
-  if(!overlay){
-    overlay=document.createElement('canvas');
-    overlay.id='segLabelOverlay';
-    overlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:6';
-    container.style.position='relative';
-    container.appendChild(overlay);
+  const ov=getOrCreateOverlay(container,uid,'pwd');
+  const ctx=ov.getContext('2d');const W=container.clientWidth,H=container.clientHeight;ov.width=W;ov.height=H;ctx.clearRect(0,0,W,H);
+
+  const mktKeys=Object.keys(MKT);
+  // 收集每个市场的RT百分比数据
+  const mktRT={};
+  for(const k of mktKeys){
+    const rt=allData['rtPct_'+k];
+    if(rt&&rt.length)mktRT[k]=rt;
   }
-  const ctx=overlay.getContext('2d');
-  const W=container.clientWidth, H=container.clientHeight;
-  overlay.width=W; overlay.height=H;
-  ctx.clearRect(0,0,W,H);
 
-  // For each market, draw segment IDs at midpoint of each segment
-  for(const[k,data]of Object.entries(allData)){
-    if(!k.startsWith('segments_')||!data.segments)continue;
-    const s=seriesMap[k];
-    if(!s)continue;
+  const pairColors=[
+    {fill:'rgba(255,87,34,0.20)',stroke:'rgba(255,87,34,0.6)'},
+    {fill:'rgba(156,39,176,0.20)',stroke:'rgba(156,39,176,0.6)'},
+    {fill:'rgba(0,150,136,0.20)',stroke:'rgba(0,150,136,0.6)'},
+    {fill:'rgba(255,193,7,0.20)',stroke:'rgba(255,193,7,0.6)'},
+    {fill:'rgba(33,150,243,0.20)',stroke:'rgba(33,150,243,0.6)'},
+    {fill:'rgba(76,175,80,0.20)',stroke:'rgba(76,175,80,0.6)'}
+  ];
 
-    const colors={segments_SSE980017:'#28a745',segments_HK_HSCASEMI:'#e83e8c',segments_NIKKEI:'#0366d6',segments_KOSPI:'#db6d28'};
-    const col=colors[k]||'#666';
+  let pi=0;
+  for(let i=0;i<mktKeys.length;i++){
+    for(let j=i+1;j<mktKeys.length;j++){
+      const kA=mktKeys[i],kB=mktKeys[j];
+      const rtA=mktRT[kA],rtB=mktRT[kB];
+      if(!rtA||!rtB)continue;
+      const sA=seriesMap[kA],sB=seriesMap[kB];
+      if(!sA||!sB)continue;
 
-    for(const seg of data.segments){
-      // Find midpoint time
-      const midTime=Math.floor((seg.startTime+seg.endTime)/2);
-      const x=ch.timeScale().timeToCoordinate(midTime);
-      if(x===null||x<0||x>W)continue;
+      const pc=pairColors[pi%pairColors.length];
 
-      // Find price at midpoint
-      const segBars=[];
-      for(let i=0;i<data.t.length;i++){
-        if(data.t[i]>=seg.startTime&&data.t[i]<=seg.endTime)segBars.push(data.c[i]);
+      // 构建时间→值映射
+      const mapA=new Map(rtA.map(b=>[b.time,b.value]));
+      const mapB=new Map(rtB.map(b=>[b.time,b.value]));
+
+      // 找两个市场的重叠时间点
+      const commonTimes=[];
+      for(const[ts]of mapA){if(mapB.has(ts))commonTimes.push(ts);}
+      commonTimes.sort((a,b)=>a-b);
+
+      if(commonTimes.length<10){pi++;continue;}
+
+      // 用滑动窗口检测背离（60分钟窗口，每10分钟步进）
+      const WINDOW=60;const STEP=10;
+      for(let si=0;si<commonTimes.length-WINDOW;si+=STEP){
+        const winTimes=commonTimes.slice(si,si+WINDOW);
+        const valsA=winTimes.map(t=>mapA.get(t));
+        const valsB=winTimes.map(t=>mapB.get(t));
+
+        // 计算窗口内方向
+        const dirA=valsA[valsA.length-1]-valsA[0];
+        const dirB=valsB[valsB.length-1]-valsB[0];
+
+        // 背离条件: 方向相反 且 变化>0.1%
+        if(Math.abs(dirA)<0.1||Math.abs(dirB)<0.1)continue;
+        if((dirA>0&&dirB>0)||(dirA<0&&dirB<0))continue;
+
+        // 画阴影
+        const tStart=winTimes[0];
+        const tEnd=winTimes[winTimes.length-1];
+        const x1=ch.timeScale().timeToCoordinate(tStart);
+        const x2=ch.timeScale().timeToCoordinate(tEnd);
+        if(x1===null||x2===null||x2-x1<2)continue;
+
+        const yA1=sA.priceToCoordinate(valsA[0]);
+        const yA2=sA.priceToCoordinate(valsA[valsA.length-1]);
+        const yB1=sB.priceToCoordinate(valsB[0]);
+        const yB2=sB.priceToCoordinate(valsB[valsB.length-1]);
+        if(yA1===null||yB1===null)continue;
+
+        const topY=Math.min(yA1,yA2,yB1,yB2)-3;
+        const botY=Math.max(yA1,yA2,yB1,yB2)+3;
+
+        ctx.fillStyle=pc.fill;ctx.strokeStyle=pc.stroke;ctx.lineWidth=0.8;
+        ctx.beginPath();ctx.rect(x1,topY,x2-x1,botY-topY);ctx.fill();ctx.stroke();
+
+        // 标注
+        const cfgA=MKT[kA],cfgB=MKT[kB];
+        const label=`⚠️ ${cfgA.n}↔${cfgB.n}`;
+        const labelY=topY-5;
+        if(labelY>10&&labelY<H-10){
+          ctx.font='bold 9px monospace';const tw=ctx.measureText(label).width;
+          ctx.fillStyle='rgba(255,87,34,0.25)';ctx.strokeStyle='rgba(255,87,34,0.7)';
+          ctx.lineWidth=0.8;ctx.beginPath();ctx.roundRect((x1+x2)/2-tw/2-4,labelY-12,tw+8,14,3);ctx.fill();ctx.stroke();
+          ctx.fillStyle='#e65100';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(label,(x1+x2)/2,labelY-5);
+        }
       }
-      if(segBars.length===0)continue;
-      const midPrice=segBars[Math.floor(segBars.length/2)];
-      const refPrice=data.o[0];
-      const midPct=((midPrice-refPrice)/refPrice)*100;
-      const y=s.priceToCoordinate(midPct);
-      if(y===null||y<12||y>H-12)continue;
-
-      // Draw ID label with background
-      const label=seg.id;
-      ctx.font='bold 9px monospace';
-      const tw=ctx.measureText(label).width;
-      const px=4, py=2;
-      ctx.fillStyle=col+'22';
-      ctx.strokeStyle=col;
-      ctx.lineWidth=0.5;
-      ctx.beginPath();
-      ctx.roundRect(x-tw/2-px, y-8-py, tw+px*2, 12+py*2, 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle=col;
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillText(label, x, y);
+      pi++;
     }
   }
 }
 
-// ========== UI3: 全球趋势监控 ==========
-function buildUI3(){
-  const ch=makeChart('chart3');
-  charts.ui3=ch;
-  series.ui3={};
+// ========== UI1 — 每市场独立chart ==========
+const mktCharts={};
+function buildUI1(){
+  const container=document.getElementById('mktCards');
+  container.innerHTML='';
+  const ref=getSoxlRef();
 
+  // 定义所有市场卡片
+  const cards=[
+    {key:'segments_SSE980017',n:'A股半导体',c:'#28a745',mkt:'CN',session:SESSIONS.CN},
+    {key:'segments_HK_HSCASEMI',n:'港股半导体',c:'#e83e8c',mkt:'HK',session:SESSIONS.HK},
+    {key:'segments_NIKKEI',n:'日本日经',c:'#0366d6',mkt:'JP',session:SESSIONS.JP},
+    {key:'segments_KOSPI',n:'韩国KOSPI',c:'#db6d28',mkt:'KR',session:SESSIONS.KR},
+    {key:'rt_f_SPX',n:'美股 S&P',c:'#6f42c1',mkt:'US',session:SESSIONS.US},
+    {key:'rt_f_EUSTX50',n:'欧股 STOXX',c:'#20c997',mkt:'EU',session:SESSIONS.EU},
+    {key:'soxl_baseline',n:'SOXL/3 24h',c:'#959da5',mkt:'SOXL',session:null}
+  ];
+
+  for(const card of cards){
+    const data=allD[card.key];
+    const rt=allD['rt_'+card.key];
+    if(!data&&!rt)continue;
+
+    // 获取状态
+    let statusTxt='无数据',statusCls='closed';
+    if(card.session){
+      const now=getHKT();
+      // 简单判断
+      statusTxt=card.session.name+' 开盘中';statusCls='open';
+    }
+    if(card.mkt==='SOXL'){statusTxt='24h';statusCls='h24';}
+
+    // 转换数据 — 每个市场用自己的第一个close作为基准，过滤掉close=0的无效数据
+    let pctData=[];
+    let mktRef=ref; // 默认SOXL ref
+    if(rt&&rt.length){
+      const validRt=rt.filter(d=>d.close>0); // 过滤无效数据
+      if(validRt.length){
+        mktRef=validRt[0].close;
+        pctData=validRt.map(bar=>({time:toHKT(bar.time),value:((bar.close-mktRef)/mktRef)*100}));
+      }
+    }else if(data){
+      if(Array.isArray(data)){
+        const validData=data.filter(d=>d.close>0);
+        if(validData.length){mktRef=validData[0].close;pctData=validData.map(p=>({time:toHKT(p.time),value:((p.close-mktRef)/mktRef)*100}));}
+      }
+      else if(data.t&&data.c){
+        // UDF格式：过滤c[i]=0的数据
+        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}
+        if(indices.length){mktRef=data.c[indices[0]];pctData=indices.map(i=>({time:toHKT(data.t[i]),value:((data.c[i]-mktRef)/mktRef)*100}));}
+      }
+    }
+    if(!pctData.length)continue;
+
+    // LW Charts要求严格升序且无重复时间戳
+    pctData.sort((a,b)=>a.time-b.time);
+    const seen=new Set();
+    pctData=pctData.filter(d=>{if(seen.has(d.time))return false;seen.add(d.time);return true;});
+    if(!pctData.length)continue;
+
+    // 段信息
+    const segKey=card.key;
+    const segData=allD[segKey];
+    let segInfo='';
+    if(segData&&segData.segments){
+      const segs=segData.segments;
+      segInfo=segs.length+'段';
+      if(segs.length>0){
+        const last=segs[segs.length-1];
+        const sid=last.id||last.segment_id||'';
+        segInfo+=' 最新'+sid;
+      }
+    }
+
+    // 最新价变化
+    const lastVal=pctData[pctData.length-1].value;
+    const chg=lastVal>=0?'+':''+lastVal.toFixed(2)+'%';
+
+    // 创建卡片
+    const div=document.createElement('div');div.className='mkt-card';
+    div.innerHTML=`
+      <div class="mkt-card-hdr${card.mkt==='CN'||card.mkt==='HK'?'':' open'}" onclick="toggleMktCard(this)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${card.c};display:inline-block"></span>
+          <span class="mkt-name">${card.n}</span>
+          <span class="mkt-status ${statusCls}">${statusTxt}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:600;color:${lastVal>=0?'#28a745':'#dc3545'}">${chg}</span>
+          ${segInfo?'<span style="font-size:10px;color:#8b949e">'+segInfo+'</span>':''}
+          <span class="arrow">▶</span>
+        </div>
+      </div>
+      <div class="mkt-card-body${card.mkt==='CN'||card.mkt==='HK'?'':' open'}">
+        <div class="mkt-card-chart" id="mktChart_${card.key}"></div>
+      </div>`;
+    container.appendChild(div);
+
+    // 创建mini chart
+    ((card,pctData,rt)=>{
+      // 用setTimeout确保DOM和chart完全渲染
+      const createChart=()=>{
+        const chartDiv=document.getElementById('mktChart_'+card.key);
+        if(!chartDiv)return;
+        // 确保卡片已渲染（宽度>0）
+        const w=chartDiv.clientWidth||chartDiv.parentElement.clientWidth||400;
+        if(w<10){setTimeout(createChart,200);return;} // 等待渲染
+        console.log('Creating chart for',card.n,'width:',w,'dataPoints:',pctData?.length);
+        const ch=LightweightCharts.createChart(chartDiv,{
+          width:w,height:180,
+          layout:{background:{type:'solid',color:'#fafbfc'},textColor:'#586069',fontSize:10},
+          grid:{vertLines:{color:'#f0f0f0'},horzLines:{color:'#f0f0f0'}},
+          crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
+          rightPriceScale:{borderColor:'#e1e4e8',scaleMargins:{top:.15,bottom:.15},visible:true},
+          timeScale:{timeVisible:true,secondsVisible:false}
+        });
+        const s=ch.addLineSeries({color:card.c,width:4,name:card.n,crosshairMarkerVisible:true,priceLineVisible:false,lastValueVisible:false,
+          priceFormat:{type:'custom',formatter:v=>v.toFixed(2)+'%'}});
+        if(pctData&&pctData.length){
+          console.log('Setting data for',card.n,':',pctData.length,'points');
+          s.setData(pctData);
+        }else{
+          console.log('NO DATA for',card.n);
+        }
+
+        // 如果有SOXL baseline且不是SOXL本身，画一条虚线基准
+        if(card.key!=='soxl_baseline'&&allD.soxl_baseline){
+          const soxlPct=normPct(allD.soxl_baseline);
+          if(soxlPct&&soxlPct.length){
+            const ss=ch.addLineSeries({color:'#959da5',width:1,name:'SOXL',lineStyle:LightweightCharts.LineStyle.Dashed,
+              crosshairMarkerVisible:true,priceLineVisible:false,lastValueVisible:false,
+              priceFormat:{type:'custom',formatter:v=>v.toFixed(2)+'%'}});
+            ss.setData(soxlPct);
+          }
+        }
+
+        ch.timeScale().fitContent();
+        mktCharts[card.key]=ch;
+
+        // Popup跟随cursor — 每个mini chart订阅crosshairMove
+        ch.subscribeCrosshairMove(p=>{
+          if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
+          showPopup(p,card,rt);
+        });
+      };
+      setTimeout(createChart,300);
+    })(card,pctData,rt);
+  }
+}
+function toggleMktCard(header){
+  header.classList.toggle('open');
+  const body=header.nextElementSibling;
+  body.classList.toggle('open');
+  // Resize chart and re-fit content
+  if(body.classList.contains('open')){
+    const chartDiv=body.querySelector('.mkt-card-chart');
+    if(chartDiv){
+      const key=chartDiv.id.replace('mktChart_','');
+      const ch=mktCharts[key];
+      if(ch){
+        setTimeout(()=>{
+          ch.applyOptions({width:chartDiv.clientWidth,height:180});
+          ch.timeScale().fitContent();
+        },100);
+      }
+    }
+  }
+}
+
+// ========== UI2 ==========
+function buildUI2(){
+  const ch=makeChart('chart2');charts.ui2=ch;series.ui2={};
+  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',1,'SOXL/3',true);s.setData(normPct(allD.soxl_baseline));series.ui2.soxl=s;}
+  for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
+    if(allD[k]){const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctHKT(allD[k]));series.ui2[k]=s;}
+  }
+  ch.subscribeCrosshairMove(p=>{if(!p||!p.time){document.getElementById('popup').style.display='none';return;}showPopup(p,null);});
+  // 加载pairwise divergence overlay
   if(allD.soxl_baseline){
-    const s=addLine(ch,'#959da5',2,'SOXL/3 24h');
-    s.setData(normPct(allD.soxl_baseline));
-    series.ui3.soxl=s;
+    const uid2='ui2';
+    const redraw2=()=>{drawPairwiseDivergence(ch,series.ui2,allD,uid2);};
+    setTimeout(()=>{ch.timeScale().fitContent();setTimeout(redraw2,300);},800);
+    ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw2,80));
+    new ResizeObserver(()=>{setTimeout(redraw2,150);}).observe(ch.chartElement());
   }
+  updateLegendUI2();renderOffhoursPanel();renderBondPanel();
+}
 
-  for(const[k,cfg]of Object.entries(MKT)){
-    if(allD[k]&&allD[k].klines){
-      const ls=addLine(ch,cfg.c,2,cfg.n);
-      ls.setData(normPct(allD[k].klines));
-      series.ui3[k]=ls;
-    }
+// ========== UI3 ==========
+function buildUI3(){
+  const ch=makeChart('chart3');charts.ui3=ch;series.ui3={};
+  if(allD.soxl_baseline){const s=addLine(ch,'#959da5',2,'SOXL/3 24h');s.setData(normPct(allD.soxl_baseline));series.ui3.soxl=s;}
+  for(const[k,cfg]of Object.entries(MKT)){const d=allD[k];if(d&&(d.t||Array.isArray(d))){const ls=addLine(ch,cfg.c,2,cfg.n);ls.setData(normPct(d));series.ui3[k]=ls;}}
+  for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD70088',n:'黄金',w:1},f_USDX_FX:{c:'#007bff88',n:'DXY',w:1},f_BTC_SPOT:{c:'#F7931A88',n:'BTC',w:1}})){
+    if(allD[k]){const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);s.setData(normPctHKT(allD[k]));series.ui3[k]=s;}
   }
-
-  // Add futures too
-  const futs={f_CFDGOLD:{c:'#FFD70088',n:'黄金',w:1},f_USDX_FX:{c:'#007bff88',n:'DXY',w:1},f_BTC_SPOT:{c:'#F7931A88',n:'BTC',w:1}};
-  for(const[k,cfg]of Object.entries(futs)){
-    if(allD[k]){
-      const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);
-      s.setData(normPct(allD[k]));
-      series.ui3[k]=s;
-    }
+  // 加载pairwise divergence + segment labels
+  if(allD.soxl_baseline){
+    const uid3='ui3';
+    const redraw3=()=>{drawPairwiseDivergence(ch,series.ui3,allD,uid3);drawSegmentLabels(ch,series.ui3,allD,uid3);};
+    ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw3,80));
+    new ResizeObserver(()=>{setTimeout(redraw3,150);}).observe(ch.chartElement());setTimeout(redraw3,600);
   }
-
-  // Segment labels + resize redraw
-  const redraw3=()=>drawSegmentLabels(ch,series.ui3,allD);
-  ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw3,80));
-  new ResizeObserver(()=>{setTimeout(redraw3,150);}).observe(ch.chartElement());
-  setTimeout(redraw3,600);
-
-  ch.subscribeCrosshairMove(p=>{
-    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
-    showPopup(p,'ui3');
-  });
+  ch.subscribeCrosshairMove(p=>{if(!p||!p.time){document.getElementById('popup').style.display='none';return;}showPopup(p,null);});
   updateLegendUI3();
+}
+
+// ========== Popup ==========
+function showPopup(param,card,rtData){
+  const popup=document.getElementById('popup');
+  if(!param.event){popup.style.display='none';return;}
+
+  // 找到当前crosshair时间对应的数据
+  let val='';
+  const rt=rtData||(card&&card.rt)||[];
+  if(rt.length){
+    // 找最近的数据点 — param.time是HKT时间，需要转回原始时间匹配
+    const t=param.time-HKT_OFFSET; // 转回原始时间戳
+    for(const bar of rt){
+      if(bar.time===t||Math.abs(bar.time-t)<60){val=bar.close;break;}
+    }
+  }
+
+  // 找对应的段信息
+  let segInfo='';
+  if(card){
+    const segKey=card.key;
+    const segData=allD[segKey];
+    if(segData&&segData.segments){
+      for(const seg of segData.segments){
+        const st=toHKT(seg.startTime||seg.start_time);
+        const et=toHKT(seg.endTime||seg.end_time);
+        if(st<=param.time&&et>=param.time){
+          const pct=seg.pctChange||seg.pct||0;
+          segInfo=`<div class="r"><span class="l">段</span><span class="v">${seg.id||''}</span></div>
+            <div class="r"><span class="l">涨跌</span><span class="v ${pct>0?'up':pct<0?'down':'rg'}">${pct>0?'+':''}${pct.toFixed(2)}%</span></div>`;
+          break;
+        }
+      }
+    }
+  }
+
+  const timeStr=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+  popup.innerHTML=`<div class="t">${card?.n||''}</div>
+    <div class="r"><span class="l">时间</span><span class="v">HKT ${timeStr}</span></div>
+    ${val?'<div class="r"><span class="l">价格</span><span class="v">'+val.toFixed(2)+'</span></div>':''}
+    ${segInfo}`;
+  let left=param.event.clientX+15;let top=param.event.clientY-10;
+  if(left+320>window.innerWidth)left=param.event.clientX-330;
+  if(top+180>window.innerHeight)top=param.event.clientY-180;
+  if(top<5)top=5;
+  popup.style.left=left+'px';popup.style.top=top+'px';popup.style.display='block';
 }
 
 // ========== Legends ==========
 function updateLegendUI1(){
-  const el=document.getElementById('legend');
-  let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
+  const el=document.getElementById('legend');let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
   let totalDiv=0;
   for(const[k,data]of Object.entries(allD)){
-    if(!k.startsWith('segments_')||!data.segments)continue;
-    const cfg=MKT[k]||{c:'#666',n:k};
-    const segs=data.segments;const divs=segs.filter(s=>s.divergence).length;
-    totalDiv+=divs;
-    // Collect segment ID range
-    const ids=segs.map(s=>s.id);
-    const idRange=ids.length>0?`${ids[0]}~${ids[ids.length-1]}`:'';
-    h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span><span class="st">${segs.length}段 ${idRange} ⚠️${divs}</span></div>`;
+    if(!k.startsWith('segments_')||!data.segments)continue;const cfg=MKT[k]||{c:'#666',n:k};const segs=data.segments;const divs=segs.filter(s=>s.divergence).length;totalDiv+=divs;
+    const ids=segs.map(s=>s.id);const idRange=ids.length?`${ids[0]}~${ids[ids.length-1]}`:'';
+    const rtK=allD['rt_'+k];const rtInfo=rtK?`实时${rtK.length}条`:'';
+    h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span><span class="st">${segs.length}段 ${idRange} ⚠️${divs} ${rtInfo}</span></div>`;
   }
-  el.innerHTML=h;
-  document.getElementById('tab1Badge').textContent=totalDiv;
+  el.innerHTML=h;document.getElementById('tab1Badge').textContent=totalDiv;
 }
-
 function updateLegendUI2(){
-  const el=document.getElementById('legend');
-  let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3</span></div>`;
-  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
-  for(const[k,cfg]of Object.entries(futs)){
+  const el=document.getElementById('legend');let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3</span></div>`;
+  for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
     if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
   }
-  el.innerHTML=h;
-  document.getElementById('tab2Badge').textContent='盘外';
+  el.innerHTML=h;const divs=computeDXYDivergence();const dc=divs.filter(d=>d.isDiv).length;
+  document.getElementById('tab2Badge').textContent=dc>0?`⚠️${dc}`:'OK';
 }
-
 function updateLegendUI3(){
-  const el=document.getElementById('legend');
-  let h=`<div class="legend-item"><span class="dot" style="background:#959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
-  for(const[k,cfg]of Object.entries(MKT)){
-    if(allD[k]&&allD[k].klines){
-      h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
-    }
-  }
-  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'}};
-  for(const[k,cfg]of Object.entries(futs)){
+  const el=document.getElementById('legend');let h=`<div class="legend-item"><span class="dot" style="background:#959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
+  for(const[k,cfg]of Object.entries(MKT)){if(allD[k]&&allD[k].t)h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;}
+  for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'}})){
     if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c};opacity:.5"></span><span class="lbl" style="opacity:.6">${cfg.n}</span></div>`;
   }
-  el.innerHTML=h;
-  document.getElementById('tab3Badge').textContent='综合';
+  el.innerHTML=h;document.getElementById('tab3Badge').textContent='综合';
 }
 
-// ========== Tab Switching ==========
+// ========== Tab Switch ==========
+// ========== 相关性背离 ==========
+const CORR_PAIRS=[
+  {id:'dxy_oil',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_CL',n:'原油',c:'#28a745'},type:'pos',label:'正相关',desc:'DXY↑则原油↑（美元走强→商品涨价）'},
+  {id:'dxy_gold',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_CFDGOLD',n:'黄金',c:'#FFD700'},type:'neg',label:'负相关',desc:'DXY↑则黄金↓（美元走强→金价承压）'},
+  {id:'dxy_btc',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_BTC_SPOT',n:'BTC',c:'#F7931A'},type:'neg',label:'负相关',desc:'DXY↑则BTC↓（美元走强→风险资产承压）'}
+];
+
+const corrCharts={};
+function buildCorrelationPanel(){
+  const container=document.getElementById('corrContainer');
+  container.innerHTML='';container.style.display='block';
+  let badge=0;
+  for(const pair of CORR_PAIRS){
+    const dA=allD[pair.a.key],dB=allD[pair.b.key];
+    if(!dA||!dB)continue;
+    // 转换为HKT百分比
+    const ref=getSoxlRef();
+    const toPct=(d)=>{
+      if(Array.isArray(d))return d.map(p=>({time:toHKT(p.time),value:((p.close-ref)/ref)*100}));
+      if(d.t&&d.c)return d.t.map((t,i)=>({time:toHKT(t),value:((d.c[i]-ref)/ref)*100}));
+      return[];
+    };
+    const pctA=toPct(dA),pctB=toPct(dB);
+    if(!pctA.length||!pctB.length)continue;
+
+    // 检测背离: 滑动窗口60根
+    const mapA=new Map(pctA.map(p=>[p.time,p.value]));
+    const mapB=new Map(pctB.map(p=>[p.time,p.value]));
+    const common=[];for(const[ts]of mapA){if(mapB.has(ts))common.push(ts);}common.sort((a,b)=>a-b);
+
+    let divWindows=[];
+    const W=60,STEP=10;
+    for(let i=0;i<common.length-W;i+=STEP){
+      const w=common.slice(i,i+W);
+      const vA=w.map(t=>mapA.get(t)),vB=w.map(t=>mapB.get(t));
+      const dA=vA[vA.length-1]-vA[0],dB_=vB[vB.length-1]-vB[0];
+      if(Math.abs(dA)<0.05||Math.abs(dB_)<0.05)continue;
+      let isDiv=false;
+      if(pair.type==='pos'){isDiv=(dA>0&&dB_<0)||(dA<0&&dB_>0);}
+      else{isDiv=(dA>0&&dB_>0)||(dA<0&&dB_<0);}
+      if(isDiv)divWindows.push({start:w[0],end:w[w.length-1],dA,dB:dB_});
+    }
+
+    const isCurrentlyDiv=divWindows.length>0;
+    if(isCurrentlyDiv)badge++;
+
+    const section=document.createElement('div');section.className='corr-section';
+    section.innerHTML=`
+      <div class="corr-header${isCurrentlyDiv?' open':''}" onclick="toggleCorrSection(this)">
+        <div style="display:flex;align-items:center">
+          <span class="corr-title">${pair.a.n} ↔ ${pair.b.n}</span>
+          <span class="corr-type ${pair.type}">${pair.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="corr-status ${isCurrentlyDiv?'div':'ok'}">${isCurrentlyDiv?'⚠️ 背离中':'✅ 正常'}</span>
+          <span class="arrow">▶</span>
+        </div>
+      </div>
+      <div class="corr-body${isCurrentlyDiv?' open':''}">
+        <div class="corr-chart" id="corrChart_${pair.id}"></div>
+        <div class="corr-info">
+          <div class="ci-r"><span class="ci-l">相关性规则</span><span class="ci-v">${pair.desc}</span></div>
+          <div class="ci-r"><span class="ci-l">背离窗口</span><span class="ci-v">${divWindows.length}个 (60min窗口)</span></div>
+          <div class="ci-r"><span class="ci-l">数据点</span><span class="ci-v">A:${pctA.length} B:${pctB.length} 重叠:${common.length}</span></div>
+        </div>
+      </div>`;
+    container.appendChild(section);
+
+    // 创建mini chart
+    setTimeout(()=>{
+      const chartDiv=document.getElementById('corrChart_'+pair.id);
+      if(!chartDiv)return;
+      const ch=LightweightCharts.createChart(chartDiv,{
+        width:chartDiv.clientWidth,height:200,
+        layout:{background:{type:'solid',color:'#fff'},textColor:'#586069',fontSize:10},
+        grid:{vertLines:{color:'#f0f0f0'},horzLines:{color:'#f0f0f0'}},
+        crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
+        timeScale:{timeVisible:true,secondsVisible:false}
+      });
+      const sA=ch.addLine({color:pair.a.c,width:2,name:pair.a.n});
+      const sB=ch.addLine({color:pair.b.c,width:2,name:pair.b.n});
+      sA.setData(pctA);sB.setData(pctB);
+
+      // 画背离阴影
+      const drawDiv=()=>{
+        const ovId='corr_ov_'+pair.id;
+        let ov=chartDiv.querySelector('#'+ovId);
+        if(!ov){ov=document.createElement('canvas');ov.id=ovId;ov.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5';chartDiv.style.position='relative';chartDiv.appendChild(ov);}
+        const ctx=ov.getContext('2d');ov.width=chartDiv.clientWidth;ov.height=200;ctx.clearRect(0,0,ov.width,ov.height);
+        for(const dw of divWindows){
+          const x1=ch.timeScale().timeToCoordinate(dw.start);
+          const x2=ch.timeScale().timeToCoordinate(dw.end);
+          if(x1===null||x2===null||x2-x1<2)continue;
+          ctx.fillStyle='rgba(220,53,69,0.12)';ctx.strokeStyle='rgba(220,53,69,0.4)';ctx.lineWidth=0.8;
+          ctx.beginPath();ctx.rect(x1,0,x2-x1,200);ctx.fill();ctx.stroke();
+        }
+      };
+      ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(drawDiv,50));
+      setTimeout(()=>{ch.timeScale().fitContent();setTimeout(drawDiv,200);},300);
+      corrCharts[pair.id]=ch;
+    },100);
+  }
+  document.getElementById('tab4Badge').textContent=badge||'0';
+}
+function toggleCorrSection(header){
+  header.classList.toggle('open');
+  const body=header.nextElementSibling;
+  body.classList.toggle('open');
+  // Resize chart
+  const chartDiv=body.querySelector('.corr-chart');
+  if(chartDiv){
+    const pairId=chartDiv.id.replace('corrChart_','');
+    const ch=corrCharts[pairId];
+    if(ch){ch.applyOptions({width:chartDiv.clientWidth,height:200});}
+  }
+}
+
 function switchTab(idx){
   currentTab=idx;
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  // Rebuild legend
-  if(idx===0)updateLegendUI1();
-  else if(idx===1)updateLegendUI2();
-  else updateLegendUI3();
-  // Resize chart + redraw overlay
-  const ch=idx===0?charts.ui1:idx===1?charts.ui2:charts.ui3;
-  if(ch){
-    const c=ch.chartElement().parentElement;
-    ch.applyOptions({width:c.clientWidth,height:c.clientHeight});
-    if(idx===0&&series.ui1.soxl)setTimeout(()=>drawDivergenceOverlay(ch,series.ui1,allD),200);
+  document.getElementById('intradayPanel').style.display=idx===0?'block':'none';
+  document.getElementById('offhoursPanel').style.display=idx===1?'block':'none';
+  document.getElementById('bondPanel').style.display=idx===1?'block':'none';
+  document.getElementById('corrContainer').style.display=idx===3?'block':'none';
+  document.getElementById('legend').style.display=idx===3?'none':'flex';
+  document.getElementById('marketBar').style.display=idx===3?'none':'flex';
+  if(idx===0){updateLegendUI1();renderIntradayPanel();}
+  else if(idx===1){updateLegendUI2();renderOffhoursPanel();renderBondPanel();}
+  else if(idx===3){buildCorrelationPanel();}
+  else{updateLegendUI3();}
+  if(idx!==3){
+    const ch=idx===0?null:idx===1?charts.ui2:charts.ui3;
+    if(ch){const c=ch.chartElement().parentElement;ch.applyOptions({width:c.clientWidth,height:c.clientHeight});}
+    if(idx===0){/* UI1 uses individual mktCards, no resize needed */}
   }
 }
 
-// ========== Date Filter ==========
 function populateDates(){
-  const sel=document.getElementById('dateFilter');
-  const dates=new Set();
+  const sel=document.getElementById('dateFilter');const dates=new Set();
   for(const[k,data]of Object.entries(allD)){
     if(!k.startsWith('segments_')||!data.segments)continue;
-    for(const seg of data.segments){
-      const d=new Date(seg.start_time*1000);
-      dates.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
-    }
+    for(const seg of data.segments){const st=seg.startTime||seg.start_time;const d=new Date(st*1000);dates.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);}
   }
-  sel.innerHTML='<option value="all">全部日期</option>';
-  [...dates].sort().forEach(d=>{sel.innerHTML+=`<option value="${d}">${d}</option>`;});
+  sel.innerHTML='<option value="all">全部日期</option>';[...dates].sort().forEach(d=>{sel.innerHTML+=`<option value="${d}">${d}</option>`;});
 }
 
-// ========== Init ==========
 async function init(){
   await loadAll();
-  buildUI1();
-  buildUI2();
-  buildUI3();
-  populateDates();
-  switchTab(0);
+  buildUI1();buildUI2();buildUI3();
+  populateDates();switchTab(0);updateMarketBar();
+  setInterval(updateMarketBar,10000);
+  setInterval(async()=>{allD={};await loadAll();buildUI1();buildUI2();buildUI3();populateDates();switchTab(currentTab);},REFRESH_INTERVAL);
 }
-
-async function refreshAll(){
-  allD={};
-  await init();
-}
-
+async function refreshAll(){allD={};await init();}
 function fitFullRange(){
   const ch=currentTab===0?charts.ui1:currentTab===1?charts.ui2:charts.ui3;
-  if(!ch)return;
-  ch.timeScale().fitContent();
-  if(currentTab===0&&series.ui1.soxl)setTimeout(()=>drawDivergenceOverlay(ch,series.ui1,allD),200);
+  if(!ch)return;ch.timeScale().fitContent();
+  setTimeout(()=>{if(currentTab===0&&series.ui1.soxl){drawDivergenceOverlay(ch,series.ui1,allD);drawSegmentLabels(ch,series.ui1,allD);}if(currentTab===2)drawSegmentLabels(ch,series.ui3,allD);},200);
 }
 
 window.addEventListener('load',init);
