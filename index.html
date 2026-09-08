@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4013 全球半导体 · 趋势监控</title>
+<script src="static/js/lightweight-charts.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#333}
+.header{background:#fff;border-bottom:1px solid #e1e4e8;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:16px;font-weight:600;color:#24292e}
+.header .sub{font-size:12px;color:#586069;margin-left:10px}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e1e4e8;padding:0 16px}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:#586069;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab:hover{color:#24292e}
+.tab.active{color:#0366d6;border-bottom-color:#0366d6;font-weight:600}
+.tab .badge{display:inline-block;background:#ffc107;color:#856404;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:4px;font-weight:600}
+.legend{display:flex;gap:14px;padding:8px 20px;background:#fff;border-bottom:1px solid #e1e4e8;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#586069}
+.legend-item .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.legend-item .lbl{font-weight:500}
+.legend-item .st{color:#8b949e}
+.chart-wrap{position:relative;background:#fff;margin:8px 12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;height:calc(100vh - 180px);min-height:350px}
+#chart1,#chart2,#chart3{width:100%;height:100%}
+.panel{display:none;width:100%;height:100%}
+.panel.active{display:block}
+.popup{display:none;position:fixed;background:#fff;border:1px solid #d1d5da;border-radius:8px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,.12);font-size:12px;z-index:100;max-width:340px;pointer-events:none}
+.popup .t{font-weight:600;font-size:13px;margin-bottom:6px;color:#24292e}
+.popup .r{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.popup .r .l{color:#586069}
+.popup .r .v{font-weight:500}
+.popup .r .v.up{color:#28a745}.popup .r .v.down{color:#dc3545}.popup .r .v.rg{color:#8b949e}
+.popup .trs-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px}
+.popup .trs-badge.bull{background:#d4edda;color:#155724}
+.popup .trs-badge.bear{background:#f8d7da;color:#721c24}
+.popup .trs-badge.mix{background:#fff3cd;color:#856404}
+.popup .div-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px;margin-left:4px}
+.popup .div-badge.div{background:#ffc107;color:#856404}
+.popup .div-badge.ok{background:#d4edda;color:#155724}
+.popup .vol-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-top:4px;margin-left:4px}
+.popup .vol-badge.surge{background:#ffeeba;color:#856404}
+.popup .vol-badge.normal{background:#e2e3e5;color:#383d41}
+.popup .log{margin-top:6px;padding-top:6px;border-top:1px solid #eee;font-size:11px;color:#586069}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:baseline">
+    <h1>🌐 4013 全球半导体 · 趋势监控</h1>
+    <span class="sub">K线分段 × TRS组合 × 背离分析</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <select id="dateFilter" style="padding:4px 8px;border:1px solid #d1d5da;border-radius:4px;font-size:12px">
+      <option value="all">全部日期</option>
+    </select>
+    <button onclick="refreshAll()" style="padding:4px 12px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:12px">🔄</button>
+    <button onclick="fitFullRange()" style="padding:4px 12px;border:1px solid #d1d5da;border-radius:4px;background:#fff;cursor:pointer;font-size:12px">📐 全范围</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(0)">📊 盘内转折<span class="badge" id="tab1Badge">-</span></div>
+  <div class="tab" onclick="switchTab(1)">🌏 中美盘外转折<span class="badge" id="tab2Badge">-</span></div>
+  <div class="tab" onclick="switchTab(2)">📈 全球趋势监控<span class="badge" id="tab3Badge">-</span></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="chart-wrap">
+  <div class="panel active" id="panel0"><div id="chart1"></div></div>
+  <div class="panel" id="panel1"><div id="chart2"></div></div>
+  <div class="panel" id="panel2"><div id="chart3"></div></div>
+</div>
+
+<div class="popup" id="popup"></div>
+
+<script>
+const D='data';let charts={};let series={};let allD={};
+let currentTab=0;
+
+// Market config
+const MKT={segments_SSE980017:{c:'#28a745',n:'A股半导体'},segments_HK_HSCASEMI:{c:'#e83e8c',n:'港股半导体'},segments_NIKKEI:{c:'#0366d6',n:'日本日经'},segments_KOSPI:{c:'#db6d28',n:'韩国KOSPI'}};
+const FUT={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
+
+// ========== Data Loading ==========
+async function loadAll(){
+  const files=['soxl_baseline.json','segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
+  for(const f of files){
+    try{const r=await fetch(`${D}/${f}`);if(!r.ok)continue;allD[f.replace('.json','')]=await r.json();}
+    catch(e){console.error('Load',f,e);}
+  }
+  // Load futures for UI2
+  const futs=[{f:'CFDGOLD',k:'CFDGOLD'},{f:'USDX_FX',k:'USDX_FX'},{f:'BTC_SPOT',k:'BTC_SPOT'},{f:'CL',k:'CL'}];
+  for(const{f,k}of futs){
+    try{const r=await fetch(`${D}/futures_${f}.json`);if(r.ok)allD['f_'+k]=await r.json();}
+    catch(e){}
+  }
+  // Load bond-hedge data from 3422
+  try{
+    const r=await fetch('http://192.168.25.134:3422/api/hedge_trs?days=7');
+    if(r.ok)allD.bond_hedge=await r.json();
+  }catch(e){console.error('Load bond-hedge',e);}
+}
+
+// ========== Chart Building ==========
+function normPct(klines){
+  if(!klines||!klines.length)return[];
+  const ref=klines[0].close;
+  return ref?klines.map(k=>({time:k.time,value:((k.close-ref)/ref)*100})):klines;
+}
+
+function makeChart(containerId){
+  const c=document.getElementById(containerId);
+  c.innerHTML='';
+  const ch=LightweightCharts.createChart(c,{
+    width:c.clientWidth,height:c.clientHeight,
+    layout:{background:{type:'solid',color:'#fff'},textColor:'#586069',fontSize:11},
+    grid:{vertLines:{color:'#f0f0f0'},horzLines:{color:'#f0f0f0'}},
+    crosshair:{mode:LightweightCharts.CrosshairMode.Normal,
+      vertLine:{color:'#586069',width:1,style:0},
+      horzLine:{color:'#586069',width:1,style:0,labelBackgroundColor:'#24292e'}},
+    rightPriceScale:{borderColor:'#e1e4e8',scaleMargins:{top:.15,bottom:.15}},
+    timeScale:{borderColor:'#e1e4e8',timeVisible:true,secondsVisible:false}
+  });
+  const ro=new ResizeObserver(()=>ch.applyOptions({width:c.clientWidth,height:c.clientHeight}));
+  ro.observe(c);
+  return ch;
+}
+
+function addLine(ch,color,lw,title,dash){
+  return ch.addLineSeries({color,lineWidth:lw||2,crosshairMarkerVisible:true,
+    priceLineVisible:false,lastValueVisible:true,title,
+    priceFormat:{type:'percent',precision:2,minMove:0.01},
+    lineStyle:dash?2:0});
+}
+
+// ========== Divergence Overlay ==========
+function findNearestSoxlTime(soxlData, targetTime){
+  // Binary search for nearest SOXL timestamp
+  let lo=0,hi=soxlData.length-1;
+  while(lo<hi){
+    const mid=(lo+hi)>>1;
+    if(soxlData[mid].time<targetTime)lo=mid+1;else hi=mid;
+  }
+  if(lo>0){
+    const d1=Math.abs(soxlData[lo].time-targetTime);
+    const d0=Math.abs(soxlData[lo-1].time-targetTime);
+    return d0<d1?lo-1:lo;
+  }
+  return 0;
+}
+
+function drawDivergenceOverlay(ch,seriesMap,allData){
+  const container=ch.chartElement();
+  let overlay=document.getElementById('divOverlay');
+  if(!overlay){
+    overlay=document.createElement('canvas');
+    overlay.id='divOverlay';
+    overlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5';
+    container.style.position='relative';
+    container.appendChild(overlay);
+  }
+  const ctx=overlay.getContext('2d');
+  const W=container.clientWidth, H=container.clientHeight;
+  overlay.width=W; overlay.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  const colors=['rgba(255,193,7,0.45)','rgba(255,107,107,0.45)','rgba(70,130,220,0.45)'];
+  let ci=0;
+
+  for(const[k,data]of Object.entries(allData)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    const mktSeries=seriesMap[k];
+    if(!mktSeries)continue;
+    const soxlSeries=seriesMap.soxl;
+    if(!soxlSeries)continue;
+    const col=colors[ci%colors.length]; ci++;
+
+    const soxl=allData.soxl_baseline;
+    const soxlRef=soxl[0].close;
+    const mktRef=data.klines[0].close;
+
+    for(const seg of data.segments){
+      if(!seg.divergence)continue;
+      const segKlines=data.klines.filter(kk=>kk.time>=seg.start_time&&kk.time<=seg.end_time);
+      if(segKlines.length<2)continue;
+
+      ctx.fillStyle=col;
+      ctx.beginPath();
+      let started=false;
+      // Top edge: market line (use nearest SOXL time for coordinate)
+      for(const sk of segKlines){
+        const si=findNearestSoxlTime(soxl,sk.time);
+        const soxlTime=soxl[si].time;
+        const x=ch.timeScale().timeToCoordinate(soxlTime);
+        const mktPct=((sk.close-mktRef)/mktRef)*100;
+        const y=mktSeries.priceToCoordinate(mktPct);
+        if(x===null||y===null||x<0)continue;
+        if(!started){ctx.moveTo(x,y);started=true;}else{ctx.lineTo(x,y);}
+      }
+      // Bottom edge: SOXL line (reverse)
+      for(let i=segKlines.length-1;i>=0;i--){
+        const sk=segKlines[i];
+        const si=findNearestSoxlTime(soxl,sk.time);
+        const soxlPt=soxl[si];
+        const x=ch.timeScale().timeToCoordinate(soxlPt.time);
+        if(x===null||x<0)continue;
+        const sv=((soxlPt.close-soxlRef)/soxlRef)*100;
+        const y=soxlSeries.priceToCoordinate(sv);
+        if(y===null)continue;
+        ctx.lineTo(x,y);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+// ========== UI1: 盘内转折 ==========
+function buildUI1(){
+  const ch=makeChart('chart1');
+  charts.ui1=ch;
+  series.ui1={};
+
+  // SOXL baseline (dashed gray)
+  if(allD.soxl_baseline){
+    const s=addLine(ch,'#959da5',1,'SOXL/3 24h',true);
+    s.setData(normPct(allD.soxl_baseline));
+    series.ui1.soxl=s;
+  }
+
+  for(const[k,cfg]of Object.entries(MKT)){
+    if(allD[k]){
+      const ls=addLine(ch,cfg.c,2,cfg.n);
+      ls.setData(normPct(allD[k]));
+      series.ui1[k]=ls;
+    }
+  }
+
+  // Divergence zones + segment ID labels
+  if(allD.soxl_baseline){
+    const soxl=allD.soxl_baseline;
+    const redraw=()=>{
+      drawDivergenceOverlay(ch,series.ui1,allD);
+      drawSegmentLabels(ch,series.ui1,allD);
+    };
+    setTimeout(()=>{
+      ch.timeScale().setVisibleLogicalRange({from:0,to:soxl.length-1});
+      setTimeout(redraw,200);
+    },600);
+    ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw,80));
+    new ResizeObserver(()=>{setTimeout(redraw,150);}).observe(ch.chartElement());
+  }
+
+  // Hover popup
+  ch.subscribeCrosshairMove(p=>{
+    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
+    showPopup(p,'ui1');
+  });
+
+  updateLegendUI1();
+}
+
+function showPopup(param,ui){
+  const popup=document.getElementById('popup');
+  // Find segment at this time
+  let found=null,foundKey='';
+  for(const[k,data]of Object.entries(allD)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    for(const seg of data.segments){
+      if(seg.start_time<=param.time&&seg.end_time>=param.time){
+        found=seg;foundKey=k;break;
+      }
+    }
+    if(found)break;
+  }
+  if(!found){popup.style.display='none';return;}
+
+  const data=allD[foundKey];
+  const dt1=new Date(found.start_time*1000).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const dt2=new Date(found.end_time*1000).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const typeL=found.type==='trend_up'?'📈 上升':found.type==='trend_down'?'📉 下降':'➡️ 震荡';
+  const soxlL=found.soxl_trend==='trend_up'?'📈 上升':found.soxl_trend==='trend_down'?'📉 下降':'➡️ 震荡';
+  const trsL=found.trs_combination==='bull_all'?'🟢 全多':found.trs_combination==='bear_all'?'🔴 全空':'⚡ 一多一空';
+  const trsCls=found.trs_combination==='bull_all'?'bull':found.trs_combination==='bear_all'?'bear':'mix';
+  const divCls=found.divergence?'div':'ok';
+  const volCls=found.volume_surge?'surge':'normal';
+
+  popup.innerHTML=`
+    <div class="t">${data.name} · ${found.id}</div>
+    <div class="r"><span class="l">时段</span><span class="v">${dt1} → ${dt2}</span></div>
+    <div class="r"><span class="l">市场</span><span class="v ${found.type==='trend_up'?'up':found.type==='trend_down'?'down':'rg'}">${typeL} (${found.pct>0?'+':''}${found.pct.toFixed(2)}%)</span></div>
+    <div class="r"><span class="l">SOXL/3</span><span class="v ${found.soxl_trend==='trend_up'?'up':found.soxl_trend==='trend_down'?'down':'rg'}">${soxlL}</span></div>
+    <div class="r"><span class="l">K线数</span><span class="v">${found.bars}</span></div>
+    <div class="r"><span class="l">波幅</span><span class="v">${((found.high-found.low)/found.start_close*100).toFixed(2)}%</span></div>
+    <div style="margin-top:4px">
+      <span class="trs-badge ${trsCls}">${trsL}</span>
+      <span class="div-badge ${divCls}">${found.divergence?'⚠️ 背离':'✅ 同向'}</span>
+      <span class="vol-badge ${volCls}">${found.volume_surge?'📊 放量':'📉 常量'}</span>
+    </div>
+    ${found.futures_trends?`<div class="log">期货: ${Object.entries(found.futures_trends).map(([s,t])=>`${s}=${t==='trend_up'?'↑':t==='trend_down'?'↓':'→'}`).join(' ')}</div>`:''}
+  `;
+
+  const rect=document.querySelector('.chart-wrap').getBoundingClientRect();
+  let left=rect.left+(param.point?.x||0)+15;
+  let top=rect.top+(param.point?.y||0)-10;
+  if(left+340>window.innerWidth)left=rect.left+(param.point?.x||0)-350;
+  if(top+200>window.innerHeight)top=rect.top+(param.point?.y||0)-200;
+  popup.style.left=left+'px';popup.style.top=top+'px';popup.style.display='block';
+}
+
+// ========== UI2: 中美盘外转折 ==========
+function buildUI2(){
+  const ch=makeChart('chart2');
+  charts.ui2=ch;
+  series.ui2={};
+
+  // SOXL
+  if(allD.soxl_baseline){
+    const s=addLine(ch,'#959da5',1,'SOXL/3',true);
+    s.setData(normPct(allD.soxl_baseline));
+    series.ui2.soxl=s;
+  }
+
+  // Futures
+  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
+  for(const[k,cfg]of Object.entries(futs)){
+    if(allD[k]){
+      const s=addLine(ch,cfg.c,1.5,cfg.n);
+      s.setData(normPct(allD[k]));
+      series.ui2[k]=s;
+    }
+  }
+
+  // HK semiconductor (from segments if available)
+  // Use KSTR from stock_swap_klines or fallback
+
+  ch.subscribeCrosshairMove(p=>{
+    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
+    showPopup(p,'ui2');
+  });
+  updateLegendUI2();
+}
+
+// ========== Segment ID Labels Overlay ==========
+function drawSegmentLabels(ch, seriesMap, allData){
+  const container=ch.chartElement();
+  let overlay=document.getElementById('segLabelOverlay');
+  if(!overlay){
+    overlay=document.createElement('canvas');
+    overlay.id='segLabelOverlay';
+    overlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:6';
+    container.style.position='relative';
+    container.appendChild(overlay);
+  }
+  const ctx=overlay.getContext('2d');
+  const W=container.clientWidth, H=container.clientHeight;
+  overlay.width=W; overlay.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  // For each market, draw segment IDs at midpoint of each segment
+  for(const[k,data]of Object.entries(allData)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    const s=seriesMap[k];
+    if(!s)continue;
+
+    const colors={segments_SSE980017:'#28a745',segments_HK_HSCASEMI:'#e83e8c',segments_NIKKEI:'#0366d6',segments_KOSPI:'#db6d28'};
+    const col=colors[k]||'#666';
+
+    for(const seg of data.segments){
+      // Find midpoint time
+      const midTime=Math.floor((seg.startTime+seg.endTime)/2);
+      const x=ch.timeScale().timeToCoordinate(midTime);
+      if(x===null||x<0||x>W)continue;
+
+      // Find price at midpoint
+      const segBars=[];
+      for(let i=0;i<data.t.length;i++){
+        if(data.t[i]>=seg.startTime&&data.t[i]<=seg.endTime)segBars.push(data.c[i]);
+      }
+      if(segBars.length===0)continue;
+      const midPrice=segBars[Math.floor(segBars.length/2)];
+      const refPrice=data.o[0];
+      const midPct=((midPrice-refPrice)/refPrice)*100;
+      const y=s.priceToCoordinate(midPct);
+      if(y===null||y<12||y>H-12)continue;
+
+      // Draw ID label with background
+      const label=seg.id;
+      ctx.font='bold 9px monospace';
+      const tw=ctx.measureText(label).width;
+      const px=4, py=2;
+      ctx.fillStyle=col+'22';
+      ctx.strokeStyle=col;
+      ctx.lineWidth=0.5;
+      ctx.beginPath();
+      ctx.roundRect(x-tw/2-px, y-8-py, tw+px*2, 12+py*2, 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle=col;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(label, x, y);
+    }
+  }
+}
+
+// ========== UI3: 全球趋势监控 ==========
+function buildUI3(){
+  const ch=makeChart('chart3');
+  charts.ui3=ch;
+  series.ui3={};
+
+  if(allD.soxl_baseline){
+    const s=addLine(ch,'#959da5',2,'SOXL/3 24h');
+    s.setData(normPct(allD.soxl_baseline));
+    series.ui3.soxl=s;
+  }
+
+  for(const[k,cfg]of Object.entries(MKT)){
+    if(allD[k]&&allD[k].klines){
+      const ls=addLine(ch,cfg.c,2,cfg.n);
+      ls.setData(normPct(allD[k].klines));
+      series.ui3[k]=ls;
+    }
+  }
+
+  // Add futures too
+  const futs={f_CFDGOLD:{c:'#FFD70088',n:'黄金',w:1},f_USDX_FX:{c:'#007bff88',n:'DXY',w:1},f_BTC_SPOT:{c:'#F7931A88',n:'BTC',w:1}};
+  for(const[k,cfg]of Object.entries(futs)){
+    if(allD[k]){
+      const s=addLine(ch,cfg.c,cfg.w,cfg.n,true);
+      s.setData(normPct(allD[k]));
+      series.ui3[k]=s;
+    }
+  }
+
+  // Segment labels + resize redraw
+  const redraw3=()=>drawSegmentLabels(ch,series.ui3,allD);
+  ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(redraw3,80));
+  new ResizeObserver(()=>{setTimeout(redraw3,150);}).observe(ch.chartElement());
+  setTimeout(redraw3,600);
+
+  ch.subscribeCrosshairMove(p=>{
+    if(!p||!p.time){document.getElementById('popup').style.display='none';return;}
+    showPopup(p,'ui3');
+  });
+  updateLegendUI3();
+}
+
+// ========== Legends ==========
+function updateLegendUI1(){
+  const el=document.getElementById('legend');
+  let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
+  let totalDiv=0;
+  for(const[k,data]of Object.entries(allD)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    const cfg=MKT[k]||{c:'#666',n:k};
+    const segs=data.segments;const divs=segs.filter(s=>s.divergence).length;
+    totalDiv+=divs;
+    // Collect segment ID range
+    const ids=segs.map(s=>s.id);
+    const idRange=ids.length>0?`${ids[0]}~${ids[ids.length-1]}`:'';
+    h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span><span class="st">${segs.length}段 ${idRange} ⚠️${divs}</span></div>`;
+  }
+  el.innerHTML=h;
+  document.getElementById('tab1Badge').textContent=totalDiv;
+}
+
+function updateLegendUI2(){
+  const el=document.getElementById('legend');
+  let h=`<div class="legend-item"><span class="dot" style="background:#959da5;border:1px dashed #959da5"></span><span class="lbl">SOXL/3</span></div>`;
+  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}};
+  for(const[k,cfg]of Object.entries(futs)){
+    if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
+  }
+  el.innerHTML=h;
+  document.getElementById('tab2Badge').textContent='盘外';
+}
+
+function updateLegendUI3(){
+  const el=document.getElementById('legend');
+  let h=`<div class="legend-item"><span class="dot" style="background:#959da5"></span><span class="lbl">SOXL/3 24h</span></div>`;
+  for(const[k,cfg]of Object.entries(MKT)){
+    if(allD[k]&&allD[k].klines){
+      h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c}"></span><span class="lbl">${cfg.n}</span></div>`;
+    }
+  }
+  const futs={f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'}};
+  for(const[k,cfg]of Object.entries(futs)){
+    if(allD[k])h+=`<div class="legend-item"><span class="dot" style="background:${cfg.c};opacity:.5"></span><span class="lbl" style="opacity:.6">${cfg.n}</span></div>`;
+  }
+  el.innerHTML=h;
+  document.getElementById('tab3Badge').textContent='综合';
+}
+
+// ========== Tab Switching ==========
+function switchTab(idx){
+  currentTab=idx;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  // Rebuild legend
+  if(idx===0)updateLegendUI1();
+  else if(idx===1)updateLegendUI2();
+  else updateLegendUI3();
+  // Resize chart + redraw overlay
+  const ch=idx===0?charts.ui1:idx===1?charts.ui2:charts.ui3;
+  if(ch){
+    const c=ch.chartElement().parentElement;
+    ch.applyOptions({width:c.clientWidth,height:c.clientHeight});
+    if(idx===0&&series.ui1.soxl)setTimeout(()=>drawDivergenceOverlay(ch,series.ui1,allD),200);
+  }
+}
+
+// ========== Date Filter ==========
+function populateDates(){
+  const sel=document.getElementById('dateFilter');
+  const dates=new Set();
+  for(const[k,data]of Object.entries(allD)){
+    if(!k.startsWith('segments_')||!data.segments)continue;
+    for(const seg of data.segments){
+      const d=new Date(seg.start_time*1000);
+      dates.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+  }
+  sel.innerHTML='<option value="all">全部日期</option>';
+  [...dates].sort().forEach(d=>{sel.innerHTML+=`<option value="${d}">${d}</option>`;});
+}
+
+// ========== Init ==========
+async function init(){
+  await loadAll();
+  buildUI1();
+  buildUI2();
+  buildUI3();
+  populateDates();
+  switchTab(0);
+}
+
+async function refreshAll(){
+  allD={};
+  await init();
+}
+
+function fitFullRange(){
+  const ch=currentTab===0?charts.ui1:currentTab===1?charts.ui2:charts.ui3;
+  if(!ch)return;
+  ch.timeScale().fitContent();
+  if(currentTab===0&&series.ui1.soxl)setTimeout(()=>drawDivergenceOverlay(ch,series.ui1,allD),200);
+}
+
+window.addEventListener('load',init);
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+*.bak
+.env
+*.egg-info/
+dist/
+build/
+node_modules/
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+*.pid
+*.lock
+nohup.out
+
+# Fetched/generated data (large, changes every 5min)
+/data/
+
+# Playwright artifacts
+/test-results/
+/playwright-report/
+
+# Runtime
+*.sqlite3
+*.db
