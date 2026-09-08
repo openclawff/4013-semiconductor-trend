@@ -42,7 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .popup .r .l{color:#586069}
 .popup .r .v{font-weight:500}
 .popup .r .v.up{color:#28a745}.popup .r .v.down{color:#dc3545}.popup .r .v.rg{color:#8b949e}
-.ap{position:absolute;background:rgba(255,255,255,.96);border:1px solid #e1e4e8;border-radius:8px;padding:10px 14px;font-size:11px;z-index:10;overflow-y:auto;max-height:60%;bottom:40px;left:10px}
+.ap{position:relative;background:rgba(255,255,255,.96);border:1px solid #e1e4e8;border-radius:8px;padding:10px 14px;font-size:11px;z-index:10;overflow-y:auto;max-height:60%}
 .ap .ap-t{font-weight:600;font-size:12px;margin-bottom:6px;color:#24292e;border-bottom:1px solid #e1e4e8;padding-bottom:4px;cursor:pointer;user-select:none}
 .ap .ap-t::before{content:'▶ ';font-size:10px}
 .ap.open .ap-t::before{content:'▼ '}
@@ -684,7 +684,7 @@ function renderBondPanel(){
   for(const[bondKey,label]of Object.entries(bondNames)){
     const bondData=bh.bonds&&bh.bonds[bondKey];
     if(!bondData||!bondData.divergence_points||!bondData.divergence_points.length)continue;
-    h+=`<div style="flex:1;min-width:200px"><div style="font-size:10px;color:#586069;font-weight:600;margin-bottom:2px">${label}</div><div id="bondChart_${bondKey}" style="width:100%;height:80px;position:relative"></div></div>`;
+    h+=`<div style="flex:1;min-width:200px"><div style="font-size:10px;color:#586069;font-weight:600;margin-bottom:2px">${label}</div><div id="bondChart_${bondKey}" style="width:100%;height:150px;position:relative"></div></div>`;
   }
   h+=`</div>`;
   
@@ -714,7 +714,7 @@ function renderBondPanel(){
       const sd=dedup(slopeData), fd=dedup(fxData);
       
       const ch=LightweightCharts.createChart(chartDiv,{
-        width:chartDiv.clientWidth,height:80,
+        width:chartDiv.clientWidth,height:150,
         layout:{background:{type:'solid',color:'#fafbfc'},textColor:'#8b949e',fontSize:9},
         grid:{vertLines:{color:'#f0f0f0'},horzLines:{color:'#f0f0f0'}},
         crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
