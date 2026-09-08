@@ -2,14 +2,18 @@
 """4013 server — serves static files + proxies 3422 bond-hedge + monitor API."""
 import http.server, json, urllib.request, os, sys, time, subprocess, threading
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 
 PORT = 4013
 BOND_HEDGE_URL = 'http://192.168.25.134:3422/api/hedge_trs?days=7'
 SURGE_GLOBAL_URL = 'http://192.168.25.134:3402/api/volume-surge/global'
 SURGE_COMMODITY_URL = 'http://192.168.25.134:3402/api/commodity-surge'
+SOXL_5050_URL = 'http://192.168.25.134:5050/query'
 BOND_CACHE = {}
 BOND_CACHE_TTL = 300  # 5min
 SURGE_CACHE = {'global': None, 'commodity': None, 'ts': 0}
+SOXL_CACHE = {'data': None, 'ts': 0}
+SOXL_CACHE_TTL = 60  # 1min refresh
 
 # Monitor cache - stores latest analysis output
 MONITOR_CACHE = {'data': None, 'ts': 0}
@@ -46,6 +50,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.proxy_bond_hedge()
         elif self.path.startswith('/api/surge'):
             self.proxy_surge()
+        elif self.path.startswith('/api/soxl'):
+            self.proxy_soxl()
         elif self.path.startswith('/api/monitor'):
             self.handle_monitor()
         elif self.path.startswith('/api/analysis'):
@@ -116,6 +122,46 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             result['global'] = {'error': str(e)}
         SURGE_CACHE['ts'] = now
         self.send_json(result)
+
+    def proxy_soxl(self):
+        """GET /api/soxl - fetch SOXL swap klines from 5050, cache 60s."""
+        now = time.time()
+        if SOXL_CACHE.get('data') and now - SOXL_CACHE.get('ts', 0) < SOXL_CACHE_TTL:
+            self.send_json(SOXL_CACHE['data'])
+            return
+        try:
+            sql = ("SELECT period_start, open, high, low, close, volume "
+                   "FROM stock_swap_klines "
+                   "WHERE contract_symbol='RSOXLUSDT' AND stock_ticker='NYSE:SOXL' "
+                   "ORDER BY period_start ASC")
+            payload = json.dumps({'sql': sql, 'project': '3400'}).encode()
+            req = urllib.request.Request(SOXL_5050_URL, data=payload,
+                                        headers={'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                result = json.loads(r.read().decode())
+            # Convert to LW Charts format: [{time: epoch_sec, open, high, low, close, volume}]
+            bars = []
+            for row in result.get('rows', []):
+                # period_start is HKT string "YYYY-MM-DDTHH:MM:SS"
+                dt = datetime.strptime(row['period_start'], '%Y-%m-%dT%H:%M:%S')
+                epoch = int(dt.replace(tzinfo=timezone(timedelta(hours=8))).timestamp())
+                bars.append({
+                    'time': epoch,
+                    'open': float(row['open']),
+                    'high': float(row['high']),
+                    'low': float(row['low']),
+                    'close': float(row['close']),
+                    'volume': float(row['volume'])
+                })
+            SOXL_CACHE['data'] = bars
+            SOXL_CACHE['ts'] = now
+            self.send_json(bars)
+        except Exception as e:
+            self.send_response(502)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
 
     def send_json(self, data):
         self.send_response(200)

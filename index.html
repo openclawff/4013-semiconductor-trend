@@ -223,8 +223,10 @@ function fetchWithTimeout(url, timeoutMs=5000){
   return fetch(url, {signal:controller.signal}).finally(()=>clearTimeout(timer));
 }
 async function loadAll(){
-  const files=['soxl_baseline.json','segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
+  const files=['segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
   for(const f of files){try{const r=await fetch(D+'/'+f);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
+  // SOXL: fetch from 5050 via server proxy (real-time, not static file)
+  try{const r=await fetchWithTimeout('/api/soxl',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.soxl_baseline=d;console.log('SOXL 5050 OK:',d.length,'bars, last:',new Date(d[d.length-1].time*1000).toISOString());}}}catch(e){console.warn('SOXL 5050 failed:',e.message);}
   for(const f of['CFDGOLD','USDX_FX','BTC_SPOT','CL']){try{const r=await fetch(D+'/futures_'+f+'.json');if(r.ok)allD['f_'+f]=await r.json();}catch(e){}}
   try{const r=await fetchWithTimeout('/api/bond-hedge',15000);if(r.ok)allD.bond_hedge=await r.json();}catch(e){console.log('bond-hedge fetch failed:',e.message);}
   // 实时K线（并行，每个带超时）
