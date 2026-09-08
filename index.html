@@ -1274,11 +1274,21 @@ function toggleMktCard(header){
 }
 
 // ========== UI2 ==========
+// Deduplicate timestamps (LW Charts requires strictly unique ascending times)
+function dedupTimestamps(arr){
+  if(!arr||!arr.length)return arr;
+  const out=[];let prev=-1;
+  for(const bar of arr){
+    if(bar.time===prev)continue; // skip duplicate timestamp
+    prev=bar.time;out.push(bar);
+  }
+  return out;
+}
 function buildUI2(){
   const ch=makeChart('chart2');charts.ui2=ch;series.ui2={};
   if(allD.soxl_baseline){const s=addLine(ch,'#959da5',1,'SOXL/3',true);s.setData(normPctIndependent(allD.soxl_baseline));series.ui2.soxl=s;}
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
-    if(allD[k]){const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctIndependent(allD[k]));series.ui2[k]=s;}
+    if(allD[k]){const cleaned=dedupTimestamps(allD[k]);const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctIndependent(cleaned));series.ui2[k]=s;}
   }
   ch.subscribeCrosshairMove(p=>{if(!p||!p.time){document.getElementById('popup').style.display='none';return;}showPopup(p,null);});
   // 加载pairwise divergence overlay
