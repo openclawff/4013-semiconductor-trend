@@ -1004,24 +1004,25 @@ function drawMiniDivergence(ch,card,mktPctData){
   const segData=allD[segKey];
   if(!segData||!segData.segments||!mktPctData||!mktPctData.length)return;
 
-  // 手动计算坐标系 (LW Charts v4没有priceToCoordinate)
+  // 手动计算坐标系 — 使用 visible range 跟隨 zoom/pan
   const PAD={top:5,bottom:5,left:0,right:0};
   const drawW=W-PAD.left-PAD.right;
   const drawH=H-PAD.top-PAD.bottom;
-  const allVals=mktPctData.map(d=>d.value);
-  let yMin=Math.min(...allVals),yMax=Math.max(...allVals);
-  if(yMin===yMax){yMin-=1;yMax+=1;}
-  const yRange=yMax-yMin;
-  const tMin=mktPctData[0].time;
-  const tMax=mktPctData[mktPctData.length-1].time;
+  const visRange=ch.timeScale().getVisibleRange();
+  const tMin=visRange.from;
+  const tMax=visRange.to;
   const tRange=tMax-tMin;
   if(tRange<=0)return;
+  // Y range: only bars within visible time
+  const visBars=mktPctData.filter(d=>d.time>=tMin&&d.time<=tMax);
+  if(!visBars.length)return;
+  let yMin=Math.min(...visBars.map(d=>d.value));
+  let yMax=Math.max(...visBars.map(d=>d.value));
+  if(yMin===yMax){yMin-=1;yMax+=1;}
+  const yRange=yMax-yMin;
 
   function tx(t){return PAD.left+((t-tMin)/tRange)*drawW;}
   function ty(v){return PAD.top+(1-(v-yMin)/yRange)*drawH;}
-
-  // Only draw segments within the visible time range
-  const visRange=ch.timeScale().getVisibleRange();
   for(const seg of segData.segments){
     const segStart=toHKT(seg.startTime||seg.start_time);
     const segEnd=toHKT(seg.endTime||seg.end_time);
