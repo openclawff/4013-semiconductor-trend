@@ -291,6 +291,14 @@ async function loadAll(){
   for(const[k,cfg]of Object.entries(MKT)){
     const sd=allD[k]; // MKT key already has segments_ prefix
     const rt=allD['rt_'+k];
+    // Convert segment file klines format to 4002 API format if needed
+    if(sd&&sd.klines&&!sd.t&&Array.isArray(sd.klines)){
+      sd.t=sd.klines.map(k=>k.time);
+      sd.o=sd.klines.map(k=>k.open);
+      sd.h=sd.klines.map(k=>k.high);
+      sd.l=sd.klines.map(k=>k.low);
+      sd.c=sd.klines.map(k=>k.close);
+    }
     if(sd&&sd.t&&rt&&rt.length){
       const merged=mergeKlines(sd,rt);
       merged.segments=sd.segments; // 保留段元数据
