@@ -1257,6 +1257,8 @@ function buildUI1(){
         // 画背离高亮: market vs SOXL方向对比
         if(card.key!=='soxl_baseline'&&allD.soxl_baseline&&MKT[card.key]){
           setTimeout(()=>drawMiniDivergence(ch,card,pctData),500);
+          // Redraw overlay on zoom/scroll
+          ch.timeScale().subscribeVisibleTimeRangeChange(()=>drawMiniDivergence(ch,card,pctData));
         }
 
         // Popup跟随cursor — 显示该chart所有线条的值
@@ -1264,6 +1266,21 @@ function buildUI1(){
           const popup=document.getElementById('popup');
           if(!param||!param.time){popup.style.display='none';return;}
           const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'});
+          // 查找当前段落信息
+          const segData=allD[card.key];
+          let segInfo='';
+          if(segData&&segData.segments){
+            const seg=segData.segments.find(s=>{
+              const sStart=toHKT(s.startTime||s.start_time);
+              const sEnd=toHKT(s.endTime||s.end_time);
+              return param.time>=sStart&&param.time<=sEnd;
+            });
+            if(seg){
+              const chg=seg.pctChange!=null?seg.pctChange.toFixed(2)+'%':((seg.endPrice-seg.startPrice)/seg.startPrice*100).toFixed(2)+'%';
+              const dir=seg.type||((seg.endPrice>=seg.startPrice)?'up':'down');
+              segInfo='<div class="r"><span class="l">段落</span><span class="v">'+seg.id+' ('+dir+' '+chg+')</span></div>';
+            }
+          }
           // 收集所有series的值
           let rows='';
           param.seriesData.forEach((data,series)=>{
@@ -1278,7 +1295,7 @@ function buildUI1(){
           if(!rows){popup.style.display='none';return;}
           popup.innerHTML='<div class="t">'+card.n+'</div>'
             +'<div class="r"><span class="l">时间</span><span class="v">UTC '+ts+'</span></div>'
-            +rows;
+            +segInfo+rows;
           // 定位
           const se=param.sourceEvent;
           const pp=param.point;
