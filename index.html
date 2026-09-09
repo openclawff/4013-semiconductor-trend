@@ -281,7 +281,7 @@ async function loadAll(){
   // 实时K线（并行，每个带超时）
   const rtPromises=Object.entries(MKT).map(async([k,cfg])=>{
     try{
-      const r=await fetchWithTimeout(API4002+'/history?symbol='+encodeURIComponent(cfg.symbol)+'&resolution=1&from='+(Math.floor(Date.now()/1000)-86400)+'&to='+Math.floor(Date.now()/1000), 8000);
+      const r=await fetchWithTimeout(API4002+'/history?symbol='+encodeURIComponent(cfg.symbol)+'&resolution=1&from='+(Math.floor(Date.now()/1000)-86400*2)+'&to='+Math.floor(Date.now()/1000), 8000);
       if(r.ok){const d=await r.json();if(d.s==='ok'&&d.t&&d.t.length){allD['rt_'+k]=d.t.map((t,i)=>({time:t,open:d.o[i],high:d.h[i],low:d.l[i],close:d.c[i],volume:d.v[i]}));console.log('RT OK:',cfg.n,allD['rt_'+k].length);}}
     }catch(e){console.warn('RT FAIL:',cfg.n,e.message);}
   });
