@@ -932,17 +932,25 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
       const x2=ch.timeScale().timeToCoordinate(m.tEnd);
       if(x1===null||x2===null||x2-x1<2)continue;
 
-      // 找Y范围
-      let topY=Infinity,botY=-Infinity;
-      const pA=ch.timeScale().timeToCoordinate(m.tStart);
-      const pB=ch.timeScale().timeToCoordinate(m.tEnd);
+      // 找Y范围：取窗口起止时间点的价格坐标
+      const vA0=mapA.get(m.tStart),vA1=mapA.get(m.tEnd);
+      const vB0=mapB.get(m.tStart),vB1=mapB.get(m.tEnd);
+      if(vA0===undefined||vB0===undefined)continue;
+      const yA0=sA.priceToCoordinate(vA0),yA1=sA.priceToCoordinate(vA1);
+      const yB0=sB.priceToCoordinate(vB0),yB1=sB.priceToCoordinate(vB1);
+      if(yA0===null||yB0===null)continue;
+      const PAD=6;
+      const topY=Math.min(yA0,yA1,yB0,yB1)-PAD;
+      const botY=Math.max(yA0,yA1,yB0,yB1)+PAD;
+      const h=botY-topY;
+      if(h<4)continue;
 
       ctx.fillStyle=pc.fill;ctx.strokeStyle=pc.stroke;ctx.lineWidth=0.8;
-      // 简化: 用chart全高作为阴影区域
-      ctx.beginPath();ctx.rect(x1,20,x2-x1,H-40);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.rect(x1,topY,x2-x1,h);ctx.fill();ctx.stroke();
 
-      // 标注
-      const labelY=25;
+      // 标注：放在区域顶部上方
+      const labelY=topY-8;
+      if(labelY<12||labelY>H-10)continue;
       const tStartStr=new Date(m.tStart*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
       const tEndStr=new Date(m.tEnd*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
       const label=`⚠️ ${pairLabel} (${tStartStr}-${tEndStr})`;
@@ -1656,7 +1664,21 @@ function switchTab(idx){
   document.getElementById('legend').style.display=idx===3?'none':'flex';
   document.getElementById('marketBar').style.display=idx===3?'none':'flex';
   if(idx===0){updateLegendUI1();renderIntradayPanel();}
-  else if(idx===1){updateLegendUI2();renderOffhoursPanel();renderBondPanel();}
+  else if(idx===1){
+    updateLegendUI2();renderOffhoursPanel();renderBondPanel();
+    // 盘外背离: tab可见后重绘divergence overlay（chart需要visible才能坐标转换）
+    const ch=charts.ui2;
+    if(ch&&series.ui2&&allD.soxl_baseline){
+      const uid2='ui2';
+      const offPairs=[
+        {a:'soxl',b:'f_CFDGOLD'},{a:'soxl',b:'f_USDX_FX'},
+        {a:'soxl',b:'f_BTC_SPOT'},{a:'soxl',b:'f_CL'},
+        {a:'f_CFDGOLD',b:'f_USDX_FX'},{a:'f_USDX_FX',b:'f_BTC_SPOT'},
+        {a:'f_CFDGOLD',b:'f_BTC_SPOT'},{a:'f_CL',b:'f_USDX_FX'}
+      ];
+      setTimeout(()=>{ch.timeScale().fitContent();setTimeout(()=>{drawPairwiseDivergence(ch,series.ui2,allD,uid2,offPairs);},300);},100);
+    }
+  }
   else if(idx===3){buildCorrelationPanel();}
   else{updateLegendUI3();}
   if(idx!==3){
