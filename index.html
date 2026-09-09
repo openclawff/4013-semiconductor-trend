@@ -252,7 +252,7 @@ function mergeKlines(staticData, rtData){
   if(!rtData||!rtData.length)return staticData;
   const merged=new Map();
   for(let i=0;i<staticData.t.length;i++){
-    if(staticData.c[i]>0)merged.set(staticData.t[i],{t:staticData.t[i],o:staticData.o[i],h:staticData.h[i],l:staticData.l[i],c:staticData.c[i],v:staticData.v[i]});
+    if(staticData.c[i]>0)merged.set(staticData.t[i],{t:staticData.t[i],o:staticData.o[i],h:staticData.h[i],l:staticData.l[i],c:staticData.c[i],v:(staticData.v?staticData.v[i]:0)||0});
   }
   for(const bar of rtData){
     if(bar.close>0)merged.set(bar.time,{t:bar.time,o:bar.open,h:bar.high,l:bar.low,c:bar.close,v:bar.volume});
@@ -293,21 +293,25 @@ async function loadAll(){
     const rt=allD['rt_'+k];
     // Convert segment file klines format to 4002 API format if needed
     if(sd&&sd.klines&&!sd.t&&Array.isArray(sd.klines)){
-      sd.t=sd.klines.map(k=>k.time);
-      sd.o=sd.klines.map(k=>k.open);
-      sd.h=sd.klines.map(k=>k.high);
-      sd.l=sd.klines.map(k=>k.low);
-      sd.c=sd.klines.map(k=>k.close);
+      sd.t=sd.klines.map(b=>b.time);
+      sd.o=sd.klines.map(b=>b.open);
+      sd.h=sd.klines.map(b=>b.high);
+      sd.l=sd.klines.map(b=>b.low);
+      sd.c=sd.klines.map(b=>b.close);
+      sd.v=sd.klines.map(b=>b.volume||0);
     }
     if(sd&&sd.t&&rt&&rt.length){
       const merged=mergeKlines(sd,rt);
-      merged.segments=sd.segments; // 保留段元数据
+      merged.segments=sd.segments;
       allD[k]=merged;
       console.log('Merged:',cfg.n,sd.t.length,'static +',rt.length,'rt →',merged.t.length,'total');
     }else if(!sd&&rt&&rt.length){
-      // US/EU: no static file, use RT directly
       allD[k]=rt;
       console.log('RT only:',cfg.n,rt.length,'bars');
+    }else if(sd&&sd.t&&!rt){
+      // Static data only, no RT
+      allD[k]=sd;
+      console.log('Static only:',cfg.n,sd.t.length,'bars');
     }
   }
   // 4002 分析数据（并行，带超时，不阻塞UI）
@@ -1438,6 +1442,12 @@ function buildUI2(){
   if(charts.ui2&&series.ui2&&Object.keys(series.ui2).length){
     const s=series.ui2;
     if(s.soxl&&allD.soxl_baseline)s.soxl.setData(normPctIndependent(allD.soxl_baseline));
+    // Update 6 market indices
+    for(const[k,cfg]of Object.entries(MKT)){
+      let d=allD[k];
+      if(!d||(!d.t&&!Array.isArray(d)))d=allD['rt_'+k]; // fallback to RT data
+      if(s[k]&&d&&(d.t||Array.isArray(d))){s[k].setData(normPctIndependent(d));}
+    }
     for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
       if(s[k]&&allD[k]){s[k].setData(normPctIndependent(dedupTimestamps(allD[k])));}
     }
@@ -1445,6 +1455,12 @@ function buildUI2(){
   }
   const ch=makeChart('chart2');charts.ui2=ch;series.ui2={};
   if(allD.soxl_baseline){const s=addLine(ch,'#959da5',1,'SOXL/3',true);s.setData(normPctIndependent(allD.soxl_baseline));series.ui2.soxl=s;}
+  // Add 6 market indices to global trend chart
+  for(const[k,cfg]of Object.entries(MKT)){
+    let d=allD[k];
+    if(!d||(!d.t&&!Array.isArray(d)))d=allD['rt_'+k]; // fallback to RT data
+    if(d&&(d.t||Array.isArray(d))){const s=addLine(ch,cfg.c,1,cfg.n);s.setData(normPctIndependent(d));series.ui2[k]=s;}
+  }
   for(const[k,cfg]of Object.entries({f_CFDGOLD:{c:'#FFD700',n:'黄金'},f_USDX_FX:{c:'#007bff',n:'DXY'},f_BTC_SPOT:{c:'#F7931A',n:'BTC'},f_CL:{c:'#28a745',n:'原油'}})){
     if(allD[k]){const cleaned=dedupTimestamps(allD[k]);const s=addLine(ch,cfg.c,1.5,cfg.n);s.setData(normPctIndependent(cleaned));series.ui2[k]=s;}
   }
