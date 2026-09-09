@@ -43,7 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .chart-wrap{position:relative;background:#fff;margin:6px 10px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:visible;height:calc(100vh - 260px);min-height:300px}
 .main-layout{display:flex;gap:0;margin:6px 10px;height:calc(100vh - 260px);min-height:300px}
 .chart-area{flex:1;background:#fff;border-radius:8px 0 0 8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:visible;position:relative}
-.right-dock{width:320px;min-width:320px;background:#fff;border-left:1px solid #e1e4e8;border-radius:0 8px 8px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow-y:auto;display:none}
+.right-dock{width:320px;min-width:320px;background:#fff;border-left:1px solid #e1e4e8;border-radius:0 8px 8px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow-y:auto;display:none;max-height:100vh}
 .right-dock.open{display:block}
 .chart-area .tv-lightweight-charts [class*="price"]{display:none!important}
 .chart-area .tv-lightweight-charts [class*="Price"]{display:none!important}
@@ -56,7 +56,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .popup .r .l{color:#586069}
 .popup .r .v{font-weight:500}
 .popup .r .v.up{color:#28a745}.popup .r .v.down{color:#dc3545}.popup .r .v.rg{color:#8b949e}
-.ap{position:relative;background:rgba(255,255,255,.96);border:1px solid #e1e4e8;border-radius:8px;padding:10px 14px;font-size:11px;z-index:10;overflow-y:auto;max-height:60%}
+.ap{position:relative;background:rgba(255,255,255,.96);border:1px solid #e1e4e8;border-radius:8px;padding:10px 14px;font-size:11px;z-index:10;overflow-y:auto;max-height:none}
 .ap .ap-t{font-weight:600;font-size:12px;margin-bottom:6px;color:#24292e;border-bottom:1px solid #e1e4e8;padding-bottom:4px;cursor:pointer;user-select:none}
 .ap .ap-t::before{content:'▶ ';font-size:10px}
 .ap.open .ap-t::before{content:'▼ '}
