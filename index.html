@@ -1314,6 +1314,52 @@ function toggleMktCard(header){
   }
 }
 
+// ========== In-place data update for tab 0 (mktCards) ==========
+function updateUI1Data(){
+  const ref=getSoxlRef();
+  const cards=[
+    {key:'segments_SSE980017',n:'A股半导体',c:'#28a745',mkt:'CN'},
+    {key:'segments_HK_HSCASEMI',n:'港股半导体',c:'#e83e8c',mkt:'HK'},
+    {key:'segments_NIKKEI',n:'日本日经',c:'#0366d6',mkt:'JP'},
+    {key:'segments_KOSPI',n:'韩国KOSPI',c:'#db6d28',mkt:'KR'},
+    {key:'US',n:'美股 S&P',c:'#6f42c1',mkt:'US'},
+    {key:'EU',n:'欧股 DAX',c:'#20c997',mkt:'EU'},
+    {key:'soxl_baseline',n:'SOXL/3 24h',c:'#959da5',mkt:'SOXL'}
+  ];
+  for(const card of cards){
+    const ser=mktSeries[card.key];
+    if(!ser||!ser.main)continue;
+    const data=allD[card.key];
+    const rt=allD['rt_'+card.key];
+    let pctData=[];
+    let mktRef=ref;
+    if(rt&&rt.length){
+      const validRt=rt.filter(d=>d.close>0);
+      if(validRt.length){mktRef=validRt[0].close;pctData=validRt.map(bar=>({time:toHKT(bar.time),value:((bar.close-mktRef)/mktRef)*100}));}
+    }else if(data){
+      if(Array.isArray(data)){
+        const todayStr=getHKT().toISOString().slice(0,10);
+        const todayStart=new Date(todayStr+'T00:00:00+08:00').getTime()/1000;
+        const todayEnd=new Date(todayStr+'T23:59:59+08:00').getTime()/1000;
+        let validData=data.filter(d=>d.close>0&&d.time>=todayStart&&d.time<=todayEnd);
+        if(!validData.length) validData=data.filter(d=>d.close>0);
+        if(validData.length){mktRef=validData[0].close;pctData=validData.map(p=>({time:toHKT(p.time),value:((p.close-mktRef)/mktRef)*100}));}
+      }else if(data.t&&data.c){
+        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}
+        if(indices.length){mktRef=data.c[indices[0]];pctData=indices.map(i=>({time:toHKT(data.t[i]),value:((data.c[i]-mktRef)/mktRef)*100}));}
+      }
+    }
+    if(!pctData.length)continue;
+    pctData.sort((a,b)=>a.time-b.time);
+    const seen=new Set();
+    pctData=pctData.filter(d=>{if(seen.has(d.time))return false;seen.add(d.time);return true;});
+    if(!pctData.length)continue;
+    ser.main.setData(pctData);
+    // Update SOXL baseline series if present
+    if(ser.soxl&&allD.soxl_baseline){ser.soxl.setData(normPct(allD.soxl_baseline));}
+  }
+}
+
 // ========== UI2 ==========
 // Deduplicate timestamps (LW Charts requires strictly unique ascending times)
 function dedupTimestamps(arr){
@@ -1891,7 +1937,7 @@ async function init(){
   buildUI1();buildUI2();buildUI3();
   populateDates();switchTab(0);updateMarketBar();
   setInterval(updateMarketBar,10000);
-  setInterval(async()=>{allD={};await loadAll();populateDates();updateMarketBar();if(currentTab===3){updateCorrelationData();}else{buildUI1();buildUI2();buildUI3();switchTab(currentTab);}},REFRESH_INTERVAL);
+  setInterval(async()=>{allD={};await loadAll();populateDates();updateMarketBar();if(currentTab===0){updateUI1Data();}else if(currentTab===1){buildUI2();}else if(currentTab===2){buildUI3();}else if(currentTab===3){updateCorrelationData();}},REFRESH_INTERVAL);
 }
 async function refreshAll(){allD={};await init();}
 function fitFullRange(){
