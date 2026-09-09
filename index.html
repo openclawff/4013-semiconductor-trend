@@ -820,7 +820,7 @@ function renderBondPanel(){
         const allPts=[...sd,...fd];
         const closest=allPts.reduce((best,p)=>Math.abs(p.time-time)<Math.abs(best.time-time)?p:best,allPts[0]);
         if(!closest){popup.style.display='none';return;}
-        popup.innerHTML=`<div class="t">${label}</div><div class="r"><span class="l">时间</span><span class="v">${new Date(closest.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'})}</span></div><div class="r"><span class="l">斜率</span><span class="v">${closest.value.toFixed(4)}%</span></div>`;
+        popup.innerHTML=`<div class="t">${label}</div><div class="r"><span class="l">时间</span><span class="v">${new Date(closest.time*1000).toLocaleString('zh-CN',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'})}</span></div><div class="r"><span class="l">斜率</span><span class="v">${closest.value.toFixed(4)}%</span></div>`;
         popup.style.display='block';
         popup.style.left=(e.clientX+12)+'px';
         popup.style.top=(e.clientY-10)+'px';
@@ -1263,7 +1263,7 @@ function buildUI1(){
         ch.subscribeCrosshairMove(param=>{
           const popup=document.getElementById('popup');
           if(!param||!param.time){popup.style.display='none';return;}
-          const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+          const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'});
           // 收集所有series的值
           let rows='';
           param.seriesData.forEach((data,series)=>{
@@ -1277,7 +1277,7 @@ function buildUI1(){
           });
           if(!rows){popup.style.display='none';return;}
           popup.innerHTML='<div class="t">'+card.n+'</div>'
-            +'<div class="r"><span class="l">时间</span><span class="v">HKT '+ts+'</span></div>'
+            +'<div class="r"><span class="l">时间</span><span class="v">UTC '+ts+'</span></div>'
             +rows;
           // 定位
           const se=param.sourceEvent;
@@ -1531,11 +1531,11 @@ function showPopup(param,card,rtData,pctData){
     }
   }
 
-  const timeStr=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+  const timeStr=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'});
   const pctColor=pctVal>0?'up':pctVal<0?'down':'rg';
   const pctSign=pctVal>0?'+':'';
   popup.innerHTML=`<div class="t">${card?.n||''}</div>
-    <div class="r"><span class="l">时间</span><span class="v">HKT ${timeStr}</span></div>
+    <div class="r"><span class="l">时间</span><span class="v">UTC ${timeStr}</span></div>
     ${pctVal!==''?'<div class="r"><span class="l">波幅</span><span class="v '+pctColor+'">'+pctSign+pctVal.toFixed(2)+'%</span></div>':''}
     ${val?'<div class="r"><span class="l">价格</span><span class="v">'+val.toFixed(2)+'</span></div>':''}
     ${segInfo}${divInfo}`;
