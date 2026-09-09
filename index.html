@@ -1270,7 +1270,7 @@ function buildUI1(){
         // 3422 bond-hedge markers on chart (delayed to ensure data loaded)
         setTimeout(()=>{
           if(!allD.bond_hedge||!allD.bond_hedge.markers)return;
-          const bondMarketMap={CN_BOND:'SSE980017',JP_BOND:'NIKKEI',US_BOND:'US',EURO_BOND:'EU'};
+          const bondMarketMap={CN_BOND:'segments_SSE980017',JP_BOND:'segments_NIKKEI',US_BOND:'US',EURO_BOND:'EU'};
           const actionShapes={敞開:'arrowUp',對沖:'arrowDown',觀望:'circle',TRS解除:'circle'};
           const markers=allD.bond_hedge.markers.filter(m=>{
             const mk=bondMarketMap[m.bond];
