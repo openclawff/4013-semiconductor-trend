@@ -1677,7 +1677,7 @@ function showCorrPopup(param,chartDiv,pair){
   if(!pctA||pctA.size===0){popup.style.display='none';return;}
 
   let h=`<div class="r"><span class="l" style="font-weight:600">${pair.a.n} ↔ ${pair.b.n}</span><span class="v">${pair.label}</span></div>`;
-  h+=`<div class="r"><span class="l">HKT</span><span class="v">${new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'})}</span></div>`;
+  h+=`<div class="r"><span class="l">时间</span><span class="v">${new Date(param.time*1000).getUTCHours().toString().padStart(2,'0')}:${new Date(param.time*1000).getUTCMinutes().toString().padStart(2,'0')}</span></div>`;
 
   for(const[ser,data]of pctA){
     if(data&&data.value!==undefined){
