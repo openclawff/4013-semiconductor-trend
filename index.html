@@ -263,7 +263,8 @@ function mergeKlines(staticData, rtData){
 
 async function loadAll(){
   const files=['segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
-  for(const f of files){try{const r=await fetch(D+'/'+f);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
+  const _cb='?v='+Date.now();
+  for(const f of files){try{const r=await fetch(D+'/'+f+_cb);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
   // SOXL: fetch from 5050 via server proxy (real-time, not static file)
   try{const r=await fetchWithTimeout('/api/soxl',20000);if(r.ok){const d=await r.json();if(Array.isArray(d)&&d.length){allD.soxl_baseline=d;console.log('SOXL 5050 OK:',d.length,'bars, last:',new Date(d[d.length-1].time*1000).toISOString());}}}catch(e){console.warn('SOXL 5050 failed:',e.message);}
   // 盘外数据: 从4002实时拉取(非静态文件)
