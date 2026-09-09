@@ -156,6 +156,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="right-dock open" id="rightDock">
   <div class="ap intraday-panel open" id="intradayPanel"></div>
   <div class="ap offhours-panel open" id="offhoursPanel" style="display:none"></div>
+  <div class="ap" id="globalDivPanel" style="display:none"></div>
 </div>
 </div>
 <div id="corrContainer" style="display:none"></div>
@@ -1529,7 +1530,12 @@ function toggleUI3Line(el){
 const CORR_PAIRS=[
   {id:'dxy_oil',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_CL',n:'原油',c:'#28a745'},type:'pos',label:'正相关',desc:'DXY↑则原油↑（美元走强→商品涨价）'},
   {id:'dxy_gold',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_CFDGOLD',n:'黄金',c:'#FFD700'},type:'neg',label:'负相关',desc:'DXY↑则黄金↓（美元走强→金价承压）'},
-  {id:'dxy_btc',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_BTC_SPOT',n:'BTC',c:'#F7931A'},type:'neg',label:'负相关',desc:'DXY↑则BTC↓（美元走强→风险资产承压）'}
+  {id:'dxy_btc',a:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},b:{key:'f_BTC_SPOT',n:'BTC',c:'#F7931A'},type:'neg',label:'负相关',desc:'DXY↑则BTC↓（美元走强→风险资产承压）'},
+  {id:'soxl_gold',a:{key:'soxl_baseline',n:'SOXL',c:'#959da5'},b:{key:'f_CFDGOLD',n:'黄金',c:'#FFD700'},type:'pos',label:'正相关',desc:'SOXL↑则黄金↑（避险+科技双驱）'},
+  {id:'soxl_dxy',a:{key:'soxl_baseline',n:'SOXL',c:'#959da5'},b:{key:'f_USDX_FX',n:'DXY',c:'#007bff'},type:'neg',label:'负相关',desc:'SOXL↑则DXY↓（风险偏好↑→美元走弱）'},
+  {id:'soxl_btc',a:{key:'soxl_baseline',n:'SOXL',c:'#959da5'},b:{key:'f_BTC_SPOT',n:'BTC',c:'#F7931A'},type:'pos',label:'正相关',desc:'SOXL↑则BTC↑（科技+风险资产同向）'},
+  {id:'soxl_oil',a:{key:'soxl_baseline',n:'SOXL',c:'#959da5'},b:{key:'f_CL',n:'原油',c:'#28a745'},type:'pos',label:'正相关',desc:'SOXL↑则原油↑（经济扩张→能源需求）'},
+  {id:'btc_gold',a:{key:'f_BTC_SPOT',n:'BTC',c:'#F7931A'},b:{key:'f_CFDGOLD',n:'黄金',c:'#FFD700'},type:'pos',label:'正相关',desc:'BTC↑则黄金↑（避险+数字黄金叙事）'},
 ];
 
 function buildCorrelationPanel(){
@@ -1648,16 +1654,85 @@ function toggleCorrSection(header){
   }
 }
 
+// ========== 全球趋势背离 Dock Panel ==========
+function renderGlobalDivPanel(){
+  const panel=document.getElementById('globalDivPanel');
+  if(!panel)return;
+  const toPct=(d)=>{
+    if(Array.isArray(d)){
+      if(!d.length)return[];
+      const ref=d[0].close;
+      return d.map(p=>({time:toHKT(p.time),value:((p.close-ref)/ref)*100}));
+    }
+    if(d&&d.t&&d.c){
+      if(!d.t.length)return[];
+      const ref=d.c[0];
+      return d.t.map((t,i)=>({time:toHKT(t),value:((d.c[i]-ref)/ref)*100}));
+    }
+    return[];
+  };
+
+  let h='<div class="ap-t" onclick="toggleAP(this)">🌏 全球趋势背离 — 异常关系检测</div><div class="ap-body">';
+  let divCount=0;
+
+  for(const pair of CORR_PAIRS){
+    const dA=allD[pair.a.key],dB=allD[pair.b.key];
+    if(!dA||!dB)continue;
+    const pctA=toPct(dA),pctB=toPct(dB);
+    if(!pctA.length||!pctB.length)continue;
+
+    const mapA=new Map(pctA.map(p=>[p.time,p.value]));
+    const mapB=new Map(pctB.map(p=>[p.time,p.value]));
+    const common=[];for(const[ts]of mapA){if(mapB.has(ts))common.push(ts);}common.sort((a,b)=>a-b);
+
+    let divWindows=[];
+    const W=60,STEP=10;
+    for(let i=0;i<common.length-W;i+=STEP){
+      const w=common.slice(i,i+W);
+      const vA=w.map(t=>mapA.get(t)),vB=w.map(t=>mapB.get(t));
+      const dA_=vA[vA.length-1]-vA[0],dB_=vB[vB.length-1]-vB[0];
+      if(Math.abs(dA_)<0.05||Math.abs(dB_)<0.05)continue;
+      let isDiv=false;
+      if(pair.type==='pos'){isDiv=(dA_>0&&dB_<0)||(dA_<0&&dB_>0);}
+      else{isDiv=(dA_>0&&dB_>0)||(dA_<0&&dB_<0);}
+      if(isDiv)divWindows.push({start:w[0],end:w[w.length-1]});
+    }
+
+    const isCurrentlyDiv=divWindows.length>0;
+    if(isCurrentlyDiv)divCount++;
+
+    const st=divWindows.length?new Date(divWindows[divWindows.length-1].start*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'}):'';
+    const et=divWindows.length?new Date(divWindows[divWindows.length-1].end*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'}):'';
+
+    h+=`<div class="ap-s">
+      <div class="ap-r"><span class="ap-l" style="font-weight:600">${pair.a.n} ↔ ${pair.b.n}</span>
+        <span class="ap-v ${isCurrentlyDiv?'warn':'ok'}">${isCurrentlyDiv?'⚠️ 背离':'✅ 正常'}</span></div>
+      <div class="ap-r"><span class="ap-l" style="padding-left:8px">${pair.label}</span>
+        <span class="ap-v" style="font-size:9px;color:#8b949e">${pair.desc}</span></div>
+      ${isCurrentlyDiv?`<div class="ap-r"><span class="ap-l" style="padding-left:8px;color:#e65100">最近背离</span>
+        <span class="ap-v warn" style="font-size:9px">${st}-${et} (${divWindows.length}个窗口)</span></div>`:''}
+    </div>`;
+  }
+
+  h+=`<div class="ap-r" style="border-top:1px solid #e1e4e8;margin-top:4px;padding-top:4px">
+    <span class="ap-l" style="font-weight:600">总计</span>
+    <span class="ap-v ${divCount>0?'warn':'ok'}">${divCount}/${CORR_PAIRS.length} 对背离</span></div>`;
+  h+='</div>';
+  panel.innerHTML=h;
+  panel.classList.add('open');
+}
+
 function switchTab(idx){
   currentTab=idx;
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  // Right dock: show on tab 0 (盘内) or tab 1 (盘外)
-  const showDock=idx===0||idx===1;
+  // Right dock: show on tab 0 (盘内), tab 1 (盘外), tab 2 (全球趋势)
+  const showDock=idx===0||idx===1||idx===2;
   document.getElementById('rightDock').classList.toggle('open',showDock);
   document.getElementById('intradayPanel').style.display=idx===0?'block':'none';
   document.getElementById('offhoursPanel').style.display=idx===1?'block':'none';
   document.getElementById('bondPanel').style.display=idx===1?'block':'none';
+  document.getElementById('globalDivPanel').style.display=(idx===0||idx===1||idx===2)?'block':'none';
   // tab4: 隐藏主布局，避免空白占位
   document.querySelector('.main-layout').style.display=idx===3?'none':'flex';
   document.getElementById('corrContainer').style.display=idx===3?'block':'none';
@@ -1681,6 +1756,8 @@ function switchTab(idx){
   }
   else if(idx===3){buildCorrelationPanel();}
   else{updateLegendUI3();}
+  // 全球趋势背离dock panel (tabs 0/1/2)
+  if(idx!==3)renderGlobalDivPanel();
   if(idx!==3){
     const ch=idx===0?null:idx===1?charts.ui2:charts.ui3;
     if(ch){const c=ch.chartElement().parentElement;ch.applyOptions({width:c.clientWidth,height:c.clientHeight});}
