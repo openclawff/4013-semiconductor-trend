@@ -832,7 +832,8 @@ function renderBondPanel(){
 }
 
 // ========== Pairwise Divergence Overlay ==========
-// 基于RT数据计算市场间背离（在重叠交易时间内检测方向相反）
+// 全局存储背离区域，供popup查询
+let _divergenceRegions=[]; // [{tStart,tEnd,pair,label}]
 function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
   const container=ch.chartElement();
   const ov=getOrCreateOverlay(container,uid,'pwd');
@@ -859,6 +860,9 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
     {fill:'rgba(33,150,243,0.20)',stroke:'rgba(33,150,243,0.6)'},
     {fill:'rgba(76,175,80,0.20)',stroke:'rgba(76,175,80,0.6)'}
   ];
+
+  const offNames={soxl:'SOXL',f_CFDGOLD:'黄金',f_USDX_FX:'DXY',f_BTC_SPOT:'BTC',f_CL:'原油'};
+  const allRegions=[];
 
   let pi=0;
   for(const pair of pairs){
@@ -890,6 +894,7 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
 
     // 用滑动窗口检测背离（60分钟窗口，每10分钟步进）
     const WINDOW=60;const STEP=10;
+    const rawWindows=[];
     for(let si=0;si<commonTimes.length-WINDOW;si+=STEP){
       const winTimes=commonTimes.slice(si,si+WINDOW);
       const valsA=winTimes.map(t=>mapA.get(t));
@@ -903,41 +908,56 @@ function drawPairwiseDivergence(ch,seriesMap,allData,uid,customPairs){
         if(Math.abs(dirA)<0.1||Math.abs(dirB)<0.1)continue;
         if((dirA>0&&dirB>0)||(dirA<0&&dirB<0))continue;
 
-        // 画阴影
-        const tStart=winTimes[0];
-        const tEnd=winTimes[winTimes.length-1];
-        const x1=ch.timeScale().timeToCoordinate(tStart);
-        const x2=ch.timeScale().timeToCoordinate(tEnd);
-        if(x1===null||x2===null||x2-x1<2)continue;
-
-        const yA1=sA.priceToCoordinate(valsA[0]);
-        const yA2=sA.priceToCoordinate(valsA[valsA.length-1]);
-        const yB1=sB.priceToCoordinate(valsB[0]);
-        const yB2=sB.priceToCoordinate(valsB[valsB.length-1]);
-        if(yA1===null||yB1===null)continue;
-
-        const topY=Math.min(yA1,yA2,yB1,yB2)-3;
-        const botY=Math.max(yA1,yA2,yB1,yB2)+3;
-
-        ctx.fillStyle=pc.fill;ctx.strokeStyle=pc.stroke;ctx.lineWidth=0.8;
-        ctx.beginPath();ctx.rect(x1,topY,x2-x1,botY-topY);ctx.fill();ctx.stroke();
-
-        // 标注
-        const offNames={soxl:'SOXL',f_CFDGOLD:'黄金',f_USDX_FX:'DXY',f_BTC_SPOT:'BTC',f_CL:'原油'};
-        const nameA=MKT[kA]?.n||offNames[kA]||kA;
-        const nameB=MKT[kB]?.n||offNames[kB]||kB;
-        const label=`⚠️ ${nameA}↔${nameB}`;
-        const labelY=topY-5;
-        if(labelY>10&&labelY<H-10){
-          ctx.font='bold 9px monospace';const tw=ctx.measureText(label).width;
-          ctx.fillStyle='rgba(255,87,34,0.25)';ctx.strokeStyle='rgba(255,87,34,0.7)';
-          ctx.lineWidth=0.8;ctx.beginPath();ctx.roundRect((x1+x2)/2-tw/2-4,labelY-12,tw+8,14,3);ctx.fill();ctx.stroke();
-          ctx.fillStyle='#e65100';ctx.textAlign='center';ctx.textBaseline='middle';
-          ctx.fillText(label,(x1+x2)/2,labelY-5);
-        }
-      }
-      pi++;
+        rawWindows.push({tStart:winTimes[0],tEnd:winTimes[winTimes.length-1]});
     }
+
+    // Merge相邻/重叠的窗口（间隔<20分钟视为连续）
+    const MERGE_GAP=1200; // 20分钟=1200秒
+    const merged=[];
+    for(const w of rawWindows){
+      if(merged.length&&w.tStart-merged[merged.length-1].tEnd<=MERGE_GAP){
+        merged[merged.length-1].tEnd=w.tEnd; // extend
+      }else{
+        merged.push({...w});
+      }
+    }
+
+    // 画合并后的区域
+    const nameA=MKT[kA]?.n||offNames[kA]||kA;
+    const nameB=MKT[kB]?.n||offNames[kB]||kB;
+    const pairLabel=`${nameA}↔${nameB}`;
+
+    for(const m of merged){
+      const x1=ch.timeScale().timeToCoordinate(m.tStart);
+      const x2=ch.timeScale().timeToCoordinate(m.tEnd);
+      if(x1===null||x2===null||x2-x1<2)continue;
+
+      // 找Y范围
+      let topY=Infinity,botY=-Infinity;
+      const pA=ch.timeScale().timeToCoordinate(m.tStart);
+      const pB=ch.timeScale().timeToCoordinate(m.tEnd);
+
+      ctx.fillStyle=pc.fill;ctx.strokeStyle=pc.stroke;ctx.lineWidth=0.8;
+      // 简化: 用chart全高作为阴影区域
+      ctx.beginPath();ctx.rect(x1,20,x2-x1,H-40);ctx.fill();ctx.stroke();
+
+      // 标注
+      const labelY=25;
+      const tStartStr=new Date(m.tStart*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+      const tEndStr=new Date(m.tEnd*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+      const label=`⚠️ ${pairLabel} (${tStartStr}-${tEndStr})`;
+      ctx.font='bold 9px monospace';const tw=ctx.measureText(label).width;
+      ctx.fillStyle='rgba(255,87,34,0.3)';ctx.strokeStyle='rgba(255,87,34,0.7)';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.roundRect((x1+x2)/2-tw/2-4,labelY-12,tw+8,14,3);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e65100';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(label,(x1+x2)/2,labelY-5);
+
+      allRegions.push({tStart:m.tStart,tEnd:m.tEnd,pair:{a:kA,b:kB},label:pairLabel});
+    }
+    pi++;
+  }
+  // 存储到全局，供popup查询
+  _divergenceRegions=allRegions;
 }
 
 // ========== UI1 — 每市场独立chart ==========
@@ -1415,6 +1435,21 @@ function showPopup(param,card,rtData,pctData){
     }
   }
 
+  // 检查当前crosshair是否在背离区域内
+  let divInfo='';
+  if(_divergenceRegions.length){
+    const t=param.time;
+    const activeDivs=_divergenceRegions.filter(r=>t>=r.tStart&&t<=r.tEnd);
+    if(activeDivs.length){
+      divInfo='<div class="r" style="border-top:1px dashed rgba(255,87,34,0.3);margin-top:4px;padding-top:4px"><span class="l" style="color:#e65100">⚠️ 背离</span></div>';
+      for(const d of activeDivs){
+        const rs=new Date(d.tStart*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+        const re=new Date(d.tEnd*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
+        divInfo+=`<div class="r"><span class="l" style="color:#e65100">${d.label}</span><span class="v" style="color:#e65100">${rs}-${re}</span></div>`;
+      }
+    }
+  }
+
   const timeStr=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'});
   const pctColor=pctVal>0?'up':pctVal<0?'down':'rg';
   const pctSign=pctVal>0?'+':'';
@@ -1422,7 +1457,7 @@ function showPopup(param,card,rtData,pctData){
     <div class="r"><span class="l">时间</span><span class="v">HKT ${timeStr}</span></div>
     ${pctVal!==''?'<div class="r"><span class="l">波幅</span><span class="v '+pctColor+'">'+pctSign+pctVal.toFixed(2)+'%</span></div>':''}
     ${val?'<div class="r"><span class="l">价格</span><span class="v">'+val.toFixed(2)+'</span></div>':''}
-    ${segInfo}`;
+    ${segInfo}${divInfo}`;
   let left=se.clientX+15;let top=se.clientY-10;
   if(left+320>window.innerWidth)left=se.clientX-330;
   if(top+180>window.innerHeight)top=se.clientY-180;
