@@ -1119,17 +1119,21 @@ function buildUI1(){
       }
     }else if(data){
       if(Array.isArray(data)){
-        // Filter to today's bars for proper wave amplitude display
-        const todayStr=getHKT().toISOString().slice(0,10);
-        const todayStart=new Date(todayStr+'T00:00:00+08:00').getTime()/1000;
-        const todayEnd=new Date(todayStr+'T23:59:59+08:00').getTime()/1000;
-        let validData=data.filter(d=>d.close>0&&d.time>=todayStart&&d.time<=todayEnd);
-        if(!validData.length) validData=data.filter(d=>d.close>0); // fallback: use all data
+        // 2-day range, cutoff at HKT 06:00, baseline = 2 days ago close
+        const nowHKT=getHKT();
+        const cutoff=new Date(nowHKT.getFullYear(),nowHKT.getMonth(),nowHKT.getDate(),6,0,0).getTime()/1000;
+        const twoDaysAgo=cutoff-2*24*3600;
+        let validData=data.filter(d=>d.close>0&&d.time>=twoDaysAgo&&d.time<=cutoff);
+        if(!validData.length) validData=data.filter(d=>d.close>0); // fallback
         if(validData.length){mktRef=validData[0].close;pctData=validData.map(p=>({time:toHKT(p.time),value:((p.close-mktRef)/mktRef)*100}));}
       }
       else if(data.t&&data.c){
-        // UDF格式：过滤c[i]=0的数据
-        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}
+        // UDF格式：2天范围，HKT 06:00 cutoff
+        const nowHKT=getHKT();
+        const cutoff=new Date(nowHKT.getFullYear(),nowHKT.getMonth(),nowHKT.getDate(),6,0,0).getTime()/1000;
+        const twoDaysAgo=cutoff-2*24*3600;
+        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0&&data.t[i]>=twoDaysAgo&&data.t[i]<=cutoff)indices.push(i);}
+        if(!indices.length){for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}} // fallback
         if(indices.length){mktRef=data.c[indices[0]];pctData=indices.map(i=>({time:toHKT(data.t[i]),value:((data.c[i]-mktRef)/mktRef)*100}));}
       }
     }
@@ -1162,7 +1166,7 @@ function buildUI1(){
     // 创建卡片
     const div=document.createElement('div');div.className='mkt-card';
     div.innerHTML=`
-      <div class="mkt-card-hdr${card.mkt==='CN'||card.mkt==='HK'?'':' open'}" onclick="toggleMktCard(this)">
+      <div class="mkt-card-hdr open" onclick="toggleMktCard(this)">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="width:10px;height:10px;border-radius:50%;background:${card.c};display:inline-block"></span>
           <span class="mkt-name">${card.n}</span>
@@ -1174,7 +1178,7 @@ function buildUI1(){
           <span class="arrow">▶</span>
         </div>
       </div>
-      <div class="mkt-card-body${card.mkt==='CN'||card.mkt==='HK'?'':' open'}">
+      <div class="mkt-card-body open">
         <div class="mkt-card-chart" id="mktChart_${card.key}"></div>
       </div>`;
     container.appendChild(div);
@@ -1338,14 +1342,19 @@ function updateUI1Data(){
       if(validRt.length){mktRef=validRt[0].close;pctData=validRt.map(bar=>({time:toHKT(bar.time),value:((bar.close-mktRef)/mktRef)*100}));}
     }else if(data){
       if(Array.isArray(data)){
-        const todayStr=getHKT().toISOString().slice(0,10);
-        const todayStart=new Date(todayStr+'T00:00:00+08:00').getTime()/1000;
-        const todayEnd=new Date(todayStr+'T23:59:59+08:00').getTime()/1000;
-        let validData=data.filter(d=>d.close>0&&d.time>=todayStart&&d.time<=todayEnd);
+        // 2-day range, cutoff at HKT 06:00
+        const nowHKT=getHKT();
+        const cutoff=new Date(nowHKT.getFullYear(),nowHKT.getMonth(),nowHKT.getDate(),6,0,0).getTime()/1000;
+        const twoDaysAgo=cutoff-2*24*3600;
+        let validData=data.filter(d=>d.close>0&&d.time>=twoDaysAgo&&d.time<=cutoff);
         if(!validData.length) validData=data.filter(d=>d.close>0);
         if(validData.length){mktRef=validData[0].close;pctData=validData.map(p=>({time:toHKT(p.time),value:((p.close-mktRef)/mktRef)*100}));}
       }else if(data.t&&data.c){
-        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}
+        const nowHKT=getHKT();
+        const cutoff=new Date(nowHKT.getFullYear(),nowHKT.getMonth(),nowHKT.getDate(),6,0,0).getTime()/1000;
+        const twoDaysAgo=cutoff-2*24*3600;
+        const indices=[];for(let i=0;i<data.c.length;i++){if(data.c[i]>0&&data.t[i]>=twoDaysAgo&&data.t[i]<=cutoff)indices.push(i);}
+        if(!indices.length){for(let i=0;i<data.c.length;i++){if(data.c[i]>0)indices.push(i);}}
         if(indices.length){mktRef=data.c[indices[0]];pctData=indices.map(i=>({time:toHKT(data.t[i]),value:((data.c[i]-mktRef)/mktRef)*100}));}
       }
     }
