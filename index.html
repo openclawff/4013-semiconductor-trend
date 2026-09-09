@@ -1020,10 +1020,13 @@ function drawMiniDivergence(ch,card,mktPctData){
   function tx(t){return PAD.left+((t-tMin)/tRange)*drawW;}
   function ty(v){return PAD.top+(1-(v-yMin)/yRange)*drawH;}
 
+  // Only draw segments within the visible time range
+  const visRange=ch.timeScale().getVisibleRange();
   for(const seg of segData.segments){
     const segStart=toHKT(seg.startTime||seg.start_time);
     const segEnd=toHKT(seg.endTime||seg.end_time);
     if(!segStart||!segEnd)continue;
+    if(segEnd<visRange.from||segStart>visRange.to)continue; // skip segments outside view
     const segMktBars=mktPctData.filter(d=>d.time>=segStart&&d.time<=segEnd);
     if(segMktBars.length<2)continue;
 
