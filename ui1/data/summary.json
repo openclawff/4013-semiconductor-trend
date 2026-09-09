@@ -1,24 +1,24 @@
 {
   "SSE980017": {
     "name": "A股半导体",
-    "segments": 47,
-    "divergences": 8,
+    "segments": 46,
+    "divergences": 7,
     "volume_surges": 25,
     "trs_dist": {
-      "mixed": 19,
       "bear_all": 17,
-      "bull_all": 11
+      "mixed": 17,
+      "bull_all": 12
     }
   },
   "HK_HSCASEMI": {
     "name": "港股半导体",
-    "segments": 69,
-    "divergences": 11,
+    "segments": 68,
+    "divergences": 10,
     "volume_surges": 0,
     "trs_dist": {
-      "mixed": 28,
       "bear_all": 24,
-      "bull_all": 17
+      "mixed": 26,
+      "bull_all": 18
     }
   },
   "NIKKEI": {
@@ -41,6 +41,17 @@
       "mixed": 29,
       "bull_all": 18,
       "bear_all": 12
+    }
+  },
+  "EU_DAX": {
+    "name": "欧股DAX",
+    "segments": 11,
+    "divergences": 3,
+    "volume_surges": 11,
+    "trs_dist": {
+      "mixed": 8,
+      "bull_all": 2,
+      "bear_all": 1
     }
   }
 }

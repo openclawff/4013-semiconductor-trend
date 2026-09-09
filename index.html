@@ -262,7 +262,7 @@ function mergeKlines(staticData, rtData){
 }
 
 async function loadAll(){
-  const files=['segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','summary.json'];
+  const files=['segments_SSE980017.json','segments_HK_HSCASEMI.json','segments_NIKKEI.json','segments_KOSPI.json','segments_US_SPX.json','segments_EU_DAX.json','summary.json'];
   const _cb='?v='+Date.now();
   for(const f of files){try{const r=await fetch(D+'/'+f+_cb);if(r.ok)allD[f.replace('.json','')]=await r.json();}catch(e){}}
   // SOXL: fetch from 5050 via server proxy (real-time, not static file)
@@ -1001,7 +1001,9 @@ function drawMiniDivergence(ch,card,mktPctData){
   const soxlPctArr=soxl.filter(d=>d.close>0).map(d=>({time:toHKT(d.time),value:((d.close-soxlRef)/soxlRef)*100}));
   const soxlPctMap=new Map(soxlPctArr.map(d=>[d.time,d.value]));
 
-  const segKey=card.key;
+  // Map chart key to segment data key
+  const segKeyMap={US:'segments_US_SPX',EU:'segments_EU_DAX'};
+  const segKey=segKeyMap[card.key]||card.key;
   const segData=allD[segKey];
   if(!segData||!segData.segments||!mktPctData||!mktPctData.length)return;
 
@@ -1272,7 +1274,8 @@ function buildUI1(){
           if(!param||!param.time){popup.style.display='none';return;}
           const ts=new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',month:'2-digit',day:'2-digit'});
           // 查找当前段落信息
-          const segData=allD[card.key];
+          const _segKeyMap={US:'segments_US_SPX',EU:'segments_EU_DAX'};
+          const segData=allD[_segKeyMap[card.key]||card.key];
           let segInfo='';
           if(segData&&segData.segments){
             const seg=segData.segments.find(s=>{
