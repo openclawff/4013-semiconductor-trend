@@ -1282,7 +1282,9 @@ function buildUI1(){
             if(seg){
               const chg=seg.pctChange!=null?seg.pctChange.toFixed(2)+'%':((seg.endPrice-seg.startPrice)/seg.startPrice*100).toFixed(2)+'%';
               const dir=seg.type||((seg.endPrice>=seg.startPrice)?'up':'down');
-              segInfo='<div class="r"><span class="l">段落</span><span class="v">'+seg.id+' ('+dir+' '+chg+')</span></div>';
+              const typeLabel={trend_up:'📈趋势升',trend_down:'📉趋势降',range:'➡️震荡'}[dir]||dir;
+              const divTag=seg.divergence?' ⚠️背离':'';
+              segInfo='<div class="r"><span class="l">段落</span><span class="v">'+seg.id+' '+typeLabel+chg+divTag+'</span></div>';
             }
           }
           // 收集所有series的值

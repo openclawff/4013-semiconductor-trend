@@ -1,35 +1,35 @@
 {
   "SSE980017": {
     "name": "A股半导体",
-    "segments": 59,
-    "divergences": 18,
-    "volume_surges": 42,
+    "segments": 45,
+    "divergences": 6,
+    "volume_surges": 23,
     "trs_dist": {
-      "mixed": 34,
-      "bear_all": 14,
+      "mixed": 17,
+      "bear_all": 17,
       "bull_all": 11
     }
   },
   "NIKKEI": {
     "name": "日本日经",
-    "segments": 53,
-    "divergences": 6,
-    "volume_surges": 53,
+    "segments": 54,
+    "divergences": 8,
+    "volume_surges": 54,
     "trs_dist": {
-      "bull_all": 18,
-      "mixed": 30,
-      "bear_all": 5
+      "mixed": 24,
+      "bull_all": 15,
+      "bear_all": 15
     }
   },
   "KOSPI": {
     "name": "韩国KOSPI",
-    "segments": 63,
-    "divergences": 10,
+    "segments": 60,
+    "divergences": 6,
     "volume_surges": 0,
     "trs_dist": {
-      "bull_all": 24,
-      "mixed": 30,
-      "bear_all": 9
+      "bear_all": 14,
+      "mixed": 29,
+      "bull_all": 17
     }
   }
 }
