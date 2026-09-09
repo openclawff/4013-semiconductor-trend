@@ -159,7 +159,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="ap" id="globalDivPanel" style="display:none"></div>
 </div>
 </div>
-<div id="corrContainer" style="display:none"></div>
+<div id="corrContainer" style="display:none;overflow-y:auto;max-height:calc(100vh - 60px);padding-bottom:20px"></div>
 <div class="popup" id="popup"></div>
 <script>
 const D='data';let charts={};let series={};let allD={};let currentTab=0;let corrCharts={};let bondCharts={};
@@ -1561,10 +1561,13 @@ function buildCorrelationPanel(){
     };
     const pctA=toPct(dA),pctB=toPct(dB);
     if(!pctA.length||!pctB.length)continue;
+    // Dedup timestamps (LW Charts v4 requires unique ascending)
+    const dedup=(arr)=>{let last=-1;return arr.filter(p=>{if(p.time<=last)return false;last=p.time;return true;});};
+    const dpA=dedup(pctA),dpB=dedup(pctB);
 
     // 检测背离: 滑动窗口60根
-    const mapA=new Map(pctA.map(p=>[p.time,p.value]));
-    const mapB=new Map(pctB.map(p=>[p.time,p.value]));
+    const mapA=new Map(dpA.map(p=>[p.time,p.value]));
+    const mapB=new Map(dpB.map(p=>[p.time,p.value]));
     const common=[];for(const[ts]of mapA){if(mapB.has(ts))common.push(ts);}common.sort((a,b)=>a-b);
 
     let divWindows=[];
@@ -1606,6 +1609,7 @@ function buildCorrelationPanel(){
     container.appendChild(section);
 
     // 创建mini chart
+    const _pctA=dpA,_pctB=dpB,_divWindows=divWindows;
     setTimeout(()=>{
       const chartDiv=document.getElementById('corrChart_'+pair.id);
       if(!chartDiv)return;
@@ -1618,7 +1622,7 @@ function buildCorrelationPanel(){
       });
       const sA=ch.addLineSeries({color:pair.a.c,width:2,name:pair.a.n});
       const sB=ch.addLineSeries({color:pair.b.c,width:2,name:pair.b.n});
-      sA.setData(pctA);sB.setData(pctB);
+      sA.setData(_pctA);sB.setData(_pctB);
 
       // 画背离阴影
       const drawDiv=()=>{
@@ -1626,7 +1630,7 @@ function buildCorrelationPanel(){
         let ov=chartDiv.querySelector('#'+ovId);
         if(!ov){ov=document.createElement('canvas');ov.id=ovId;ov.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5';chartDiv.style.position='relative';chartDiv.appendChild(ov);}
         const ctx=ov.getContext('2d');ov.width=chartDiv.clientWidth;ov.height=200;ctx.clearRect(0,0,ov.width,ov.height);
-        for(const dw of divWindows){
+        for(const dw of _divWindows){
           const x1=ch.timeScale().timeToCoordinate(dw.start);
           const x2=ch.timeScale().timeToCoordinate(dw.end);
           if(x1===null||x2===null||x2-x1<2)continue;
@@ -1636,7 +1640,16 @@ function buildCorrelationPanel(){
       };
       ch.timeScale().subscribeVisibleLogicalRangeChange(()=>setTimeout(drawDiv,50));
       setTimeout(()=>{ch.timeScale().fitContent();setTimeout(drawDiv,200);},300);
+      // Crosshair popup
+      ch.subscribeCrosshairMove((param)=>{
+        if(!param.time||!param.seriesData||param.seriesData.size===0){
+          document.getElementById('popup').style.display='none';return;
+        }
+        showCorrPopup(param,chartDiv,pair);
+      });
       corrCharts[pair.id]=ch;
+      // Hide popup on mouseleave
+      chartDiv.addEventListener('mouseleave',()=>{document.getElementById('popup').style.display='none';});
     },100);
   }
   document.getElementById('tab4Badge').textContent=badge||'0';
@@ -1652,6 +1665,30 @@ function toggleCorrSection(header){
     const ch=corrCharts[pairId];
     if(ch){ch.applyOptions({width:chartDiv.clientWidth,height:200});}
   }
+}
+
+// ========== Correlation Chart Popup ==========
+function showCorrPopup(param,chartDiv,pair){
+  const popup=document.getElementById('popup');
+  const se=param.sourceEvent||param.event;
+  if(!se||se.clientX===undefined){popup.style.display='none';return;}
+
+  const pctA=param.seriesData;
+  if(!pctA||pctA.size===0){popup.style.display='none';return;}
+
+  let h=`<div class="r"><span class="l" style="font-weight:600">${pair.a.n} ↔ ${pair.b.n}</span><span class="v">${pair.label}</span></div>`;
+  h+=`<div class="r"><span class="l">HKT</span><span class="v">${new Date(param.time*1000).toLocaleString('zh-CN',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'})}</span></div>`;
+
+  for(const[ser,data]of pctA){
+    if(data&&data.value!==undefined){
+      const opts=typeof ser.options==='function'?ser.options():{};h+=`<div class="r"><span class="l" style="color:${opts.color||'#333'}">${opts.name||opts.title||''}</span><span class="v ${data.value>0?'up':data.value<0?'down':''}">${data.value>=0?'+':''}${data.value.toFixed(3)}%</span></div>`;
+    }
+  }
+
+  popup.innerHTML=h;
+  popup.style.display='block';
+  popup.style.left=(se.clientX+12)+'px';
+  popup.style.top=(se.clientY-10)+'px';
 }
 
 // ========== 全球趋势背离 Dock Panel ==========
