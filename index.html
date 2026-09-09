@@ -1268,7 +1268,6 @@ function buildUI1(){
           ch.timeScale().subscribeVisibleTimeRangeChange(()=>drawMiniDivergence(ch,card,pctData));
         }
         // bond markers added after all charts
-        },3000);
 
         // Popup跟随cursor — 显示该chart所有线条的值
         ch.subscribeCrosshairMove(param=>{
