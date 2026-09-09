@@ -1274,9 +1274,9 @@ function buildUI1(){
           const actionShapes={敞開:'arrowUp',對沖:'arrowDown',觀望:'circle',TRS解除:'circle'};
           const markers=allD.bond_hedge.markers.filter(m=>{
             const mk=bondMarketMap[m.bond];
-            return mk===card.key&&m.ts;
+            return mk===card.key&&(m.time||m.ts);
           }).map(m=>({
-            time:Math.floor(m.ts),
+            time:Math.floor(m.time||m.ts),
             position:m.action==='對沖'?'belowBar':'aboveBar',
             color:m.color||'#9e9e9e',
             shape:actionShapes[m.action]||'circle',
